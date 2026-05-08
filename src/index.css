@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Outfit", "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Outfit", "Be Vietnam Pro", sans-serif;
+  --font-sans: "Be Vietnam Pro", "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Be Vietnam Pro", "Outfit", sans-serif;
 
   --color-brand: #2563eb;
   --color-brand-light: #1d4ed8;
