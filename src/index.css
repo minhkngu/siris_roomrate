@@ -1,32 +1,48 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Be Vietnam Pro", sans-serif;
-  
-  --color-brand-primary: #10b981;
-  --color-brand-secondary: #059669;
+  --font-sans: "Outfit", "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", "Be Vietnam Pro", sans-serif;
+
+  --color-brand: #2563eb;
+  --color-brand-light: #1d4ed8;
+  --color-accent: #3b82f6;
+  --color-accent-light: #60a5fa;
+  --color-accent-soft: #dbeafe;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f8fafc;
+  --color-border: #e5e7eb;
+  --color-border-light: #f3f4f6;
+  --color-text: #111827;
+  --color-text-muted: #6b7280;
+  --color-text-dim: #9ca3af;
+  --color-positive: #10b981;
+  --color-positive-soft: #d1fae5;
+  --color-negative: #ef4444;
+  --color-negative-soft: #fee2e2;
+  --color-warm: #fef3c7;
+  --color-warm-border: #fde68a;
+  --color-warm-text: #b45309;
 }
 
 @layer base {
   body {
-    @apply bg-slate-100 text-slate-900 font-sans;
+    @apply bg-surface text-text font-sans;
   }
-  
-  h1, h2, h3, h4 {
+
+  h1,
+  h2,
+  h3,
+  h4 {
     @apply font-display font-semibold;
   }
-}
-
-.glass-card {
-  @apply bg-white/90 backdrop-blur-md border border-slate-200/50 shadow-md;
 }
 
 @utility scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+
   &::-webkit-scrollbar {
     display: none;
   }
 }
-
