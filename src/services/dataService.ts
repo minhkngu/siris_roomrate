@@ -2,14 +2,25 @@ import { supabase } from '../lib/supabase';
 import { Property, RoomType, Policy, DateAdjustment } from '../types';
 import { Language } from '../translations';
 
+// Cache - only cache raw Supabase data, not transformed
+let cachedData: {
+  branches: any[];
+  rooms: any[];
+  discounts: any[];
+  amenities: any[];
+  branchAmenities: any[];
+  roomAmenities: any[];
+  settings: any[];
+  dateAdjustments: any[];
+} | null = null;
+
 const parseArray = (val: any): string[] => {
   if (Array.isArray(val)) return val;
   if (typeof val === 'string') {
     const trimmed = val.trim();
     if (!trimmed) return [];
-    
+
     try {
-      // Try parsing if it's a JSON string like '["a", "b"]'
       if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
         const parsed = JSON.parse(trimmed);
         if (Array.isArray(parsed)) return parsed;
@@ -18,28 +29,27 @@ const parseArray = (val: any): string[] => {
       // Fall through to manual splitting
     }
 
-    // Use semicolon as the primary "safe" separator if it exists
     if (trimmed.includes(';')) {
       return trimmed.split(';').map(s => s.trim()).filter(Boolean);
     }
-    
-    // Fallback to comma if no semicolon is found
+
     return trimmed.split(',').map(s => s.trim()).filter(Boolean);
   }
   return [];
 };
 
 export const fetchAllData = async () => {
+  if (cachedData) return cachedData;
+
   if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-    console.error('Supabase credentials missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in settings.');
-    return { branches: [], rooms: [], discounts: [], adjustments: [], amenities: [], branchAmenities: [], roomAmenities: [], settings: [] };
+    console.error('Supabase credentials missing.');
+    return { branches: [], rooms: [], discounts: [], amenities: [], branchAmenities: [], roomAmenities: [], settings: [], dateAdjustments: [] };
   }
 
   try {
     const fetchTable = async (table: string, isOptional = false) => {
       const { data, error } = await supabase.from(table).select('*');
       if (error) {
-        // Only warn if it's a critical table or not a "table not found" error
         const isTableNotFound = error.message.includes('Could not find the table') || error.code === 'PGRST116';
         if (!isOptional || !isTableNotFound) {
           console.warn(`Error fetching table ${table}:`, error.message);
@@ -72,22 +82,23 @@ export const fetchAllData = async () => {
     let roomsData = rooms;
     if (roomsData.length === 0) roomsData = await fetchTable('rooms');
 
-    return { branches, rooms: roomsData, discounts, amenities, branchAmenities, roomAmenities, settings, dateAdjustments };
+    cachedData = { branches, rooms: roomsData, discounts, amenities, branchAmenities, roomAmenities, settings, dateAdjustments };
+    return cachedData;
   } catch (error) {
     console.error('Unexpected error in fetchAllData:', error);
     return { branches: [], rooms: [], discounts: [], amenities: [], branchAmenities: [], roomAmenities: [], settings: [], dateAdjustments: [] };
   }
 };
 
-export const fetchProperties = async (lang: Language = 'vi'): Promise<{ 
-  properties: Property[], 
-  masterPropertyAmenities: string[], 
+export const fetchProperties = async (lang: Language = 'vi'): Promise<{
+  properties: Property[],
+  masterPropertyAmenities: string[],
   masterRoomAmenities: string[],
   generalPolicies: Policy[],
   dateAdjustments: DateAdjustment[]
 }> => {
   const { branches, rooms, discounts, amenities, branchAmenities, roomAmenities, settings, dateAdjustments } = await fetchAllData();
-  
+
   const getTranslatedValue = (item: any, field: string, currentLang: Language, defaultValue: any = '') => {
     if (currentLang === 'en') {
       const enField = `${field}_en`;
@@ -101,19 +112,19 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<{
 
   // Get general policies from settings table if available
   let generalPolicies: Policy[] = [];
-  const policySetting = settings.find((s: any) => 
-    s.key === 'general_policies' || s.name === 'general_policies' || 
+  const policySetting = settings.find((s: any) =>
+    s.key === 'general_policies' || s.name === 'general_policies' ||
     s.key === 'general_policy' || s.name === 'general_policy'
   );
-  
+
   if (policySetting) {
     try {
-      const rawValue = lang === 'en' && policySetting.value_en 
-        ? policySetting.value_en 
+      const rawValue = lang === 'en' && policySetting.value_en
+        ? policySetting.value_en
         : policySetting.value;
-        
-      const parsedValue = typeof rawValue === 'string' 
-        ? JSON.parse(rawValue) 
+
+      const parsedValue = typeof rawValue === 'string'
+        ? JSON.parse(rawValue)
         : rawValue;
       if (Array.isArray(parsedValue)) generalPolicies = parsedValue;
     } catch (e) {
@@ -134,11 +145,11 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<{
       { title: 'Thanh toán', content: 'Thanh toán tiền phòng từ ngày 1 đến ngày 5 hàng tháng.' }
     ];
   }
-  
+
   const masterPropertyAmenities = amenities
     .filter(a => a.category === 'property' || a.category === 'general')
     .map(a => getTranslatedValue(a, 'name', lang));
-    
+
   const masterRoomAmenities = amenities
     .filter(a => a.category === 'room' || a.category === 'general')
     .map(a => getTranslatedValue(a, 'name', lang));
@@ -150,14 +161,14 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<{
       .filter(room => {
         const rBranchId = room.branch_id || room.branchId || room.branchid || room.branch_ID;
         const bId = branch.id;
-        
+
         if (!rBranchId || !bId) return false;
         return String(rBranchId).trim().toLowerCase() === String(bId).trim().toLowerCase();
       })
       .map(room => {
         // Robust mapping for amenities
         let roomAmenitiesList = parseArray(getTranslatedValue(room, 'amenities', lang));
-        
+
         if (roomAmenitiesList.length === 0 && roomAmenities?.length > 0 && amenities?.length > 0) {
           roomAmenitiesList = roomAmenities
             .filter((ra: any) => String(ra.room_type_id) === String(room.id))
@@ -174,10 +185,10 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<{
 
         const branchStorageFolderRaw = branch.storage_folder || branch.storageFolder || branch.storagefolder;
         const roomStorageFolderPartRaw = room.storage_folder || room.storageFolder || room.storagefolder;
-        
+
         const branchStorageFolder = typeof branchStorageFolderRaw === 'string' ? branchStorageFolderRaw.trim() : undefined;
         const roomStorageFolderPart = typeof roomStorageFolderPartRaw === 'string' ? roomStorageFolderPartRaw.trim() : undefined;
-        
+
         let roomStorageFolder = roomStorageFolderPart;
         if (branchStorageFolder && roomStorageFolderPart) {
           const cleanBranch = branchStorageFolder.replace(/^\/+|\/+$/g, '');
@@ -232,7 +243,7 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<{
 
     const bStorageFolderRaw = branch.storage_folder || branch.storageFolder || branch.storagefolder;
     const bStorageFolder = typeof bStorageFolderRaw === 'string' ? bStorageFolderRaw.trim() : undefined;
-    
+
     const branchPolicies = getTranslatedValue(branch, 'policies', lang);
 
     return {

@@ -46,12 +46,7 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-32">
-            <div className="w-12 h-12 border-4 border-border border-t-accent rounded-full animate-spin mb-4" />
-            <p className="text-text-muted font-medium">{t.loading}</p>
-          </div>
-        ) : (
+        {!loading && (
           <div className="space-y-8">
             <SurchargeBanner adjustments={dateAdjustments} lang={lang} t={t} />
 
