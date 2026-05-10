@@ -17,9 +17,10 @@ interface RoomCardProps {
   t: any;
   lang: Language;
   branchTag?: string;
+  priority?: boolean;
 }
 
-export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) => {
+export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, priority }) => {
   const cloudinaryTag = branchTag && room.tag ? `${branchTag}_${room.tag}` : undefined;
   const { images, loading } = useCloudinaryImages(cloudinaryTag);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -41,7 +42,8 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
     if (images.length > 0 && !preloadedRef.current.has(0)) {
       preloadedRef.current.add(0);
       const img = new Image();
-      img.src = images[0];
+      img.src = images[0].src;
+      img.srcset = images[0].srcSet;
     }
   }, [images]);
 
@@ -52,7 +54,8 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
       if (preloadedRef.current.has(idx)) return;
       preloadedRef.current.add(idx);
       const img = new Image();
-      img.src = images[idx];
+      img.src = images[idx].src;
+      img.srcset = images[idx].srcSet;
     };
     preload(currentIndex);
     preload((currentIndex + 1) % total);
@@ -67,7 +70,8 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
         if (!preloadedRef.current.has(i)) {
           preloadedRef.current.add(i);
           const img = new Image();
-          img.src = images[i];
+          img.src = images[i].src;
+          img.srcset = images[i].srcSet;
         }
       }
     }, 2000);
@@ -146,35 +150,33 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
     <div className="bg-white rounded-[2rem] overflow-hidden border-2 border-gray-200/80 shadow-md hover:border-indigo-300 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all group h-full flex flex-col">
       <div
         ref={containerRef}
-        className="relative h-56 sm:h-72 overflow-hidden group/carousel bg-gray-100 shrink-0 border-b border-gray-100 select-none"
+        className={`relative h-64 sm:h-72 overflow-hidden group/carousel bg-gray-100 shrink-0 border-b border-gray-100 select-none ${loading ? 'animate-shimmer bg-gray-200' : ''}`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {loading ? (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-          </div>
-        ) : images.length > 0 ? (
+        {!loading && images.length > 0 ? (
           <div className="relative w-full h-full overflow-hidden">
             {/* Slide track - holds all images side by side */}
             <div
               className="flex h-full transition-transform duration-300 ease-out"
               style={{ transform: `translateX(-${currentIndex * 100}%)` }}
             >
-              {images.map((src, idx) => (
+              {images.map((imgData, idx) => (
                 <div key={idx} className="w-full h-full shrink-0 relative">
                   {!preloadedRef.current.has(idx) && total > 1 && (
                     <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-pulse" />
                   )}
                   <img
-                    src={src}
+                    src={imgData.src}
+                    srcSet={imgData.srcSet}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     alt={idx === currentIndex ? room.name : ''}
                     className={`w-full h-full object-cover group-hover/carousel:scale-105 transition-transform duration-700 ${preloadedRef.current.has(idx) || total <= 1 ? 'opacity-100' : 'opacity-0'}`}
                     fetchPriority={idx === 0 ? 'high' : 'auto'}
                     decoding="async"
                     draggable={false}
-                    loading={idx > 2 ? 'lazy' : 'eager'}
+                    loading={idx === 0 ? 'eager' : 'lazy'}
                   />
                 </div>
               ))}
@@ -292,7 +294,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
               </span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+              <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-0.5 whitespace-nowrap">
                 {t.monthlyOver3Label || (lang === 'en' ? 'MONTH (>3M) + FEES' : 'THÁNG (>3TH) + PHÍ')}
               </span>
               <span className="text-xs sm:text-sm font-bold text-indigo-600 mb-1 whitespace-nowrap">
