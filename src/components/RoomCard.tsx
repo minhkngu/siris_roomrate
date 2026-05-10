@@ -258,7 +258,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
           </div>
         </div>
 
-        <div className="mb-4 flex-1">
+        <div className="mb-3">
           <AmenityList included={room.amenities} excluded={room.excludedAmenities} compact={true} />
         </div>
 
