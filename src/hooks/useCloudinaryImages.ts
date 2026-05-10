@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'demo';
 
@@ -10,6 +10,31 @@ export interface CloudinaryImage {
 export const useCloudinaryImages = (tag: string | undefined) => {
   const [images, setImages] = useState<CloudinaryImage[]>([]);
   const [loading, setLoading] = useState(false);
+  const preloadLinkRef = useRef<HTMLLinkElement | null>(null);
+
+  // Inject/update a <link rel="preload"> in <head> for the first image
+  const setPreloadLink = (href: string, srcSet: string) => {
+    // Remove old preload link if exists
+    if (preloadLinkRef.current) {
+      preloadLinkRef.current.remove();
+    }
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = href;
+    link.imageSrcset = srcSet;
+    document.head.appendChild(link);
+    preloadLinkRef.current = link;
+  };
+
+  useEffect(() => {
+    return () => {
+      // Cleanup on unmount
+      if (preloadLinkRef.current) {
+        preloadLinkRef.current.remove();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!tag) {
@@ -17,12 +42,16 @@ export const useCloudinaryImages = (tag: string | undefined) => {
       return;
     }
 
+    const controller = new AbortController();
+
     const fetchImages = async () => {
       setLoading(true);
       try {
         // Cloudinary Resource List API (requires "Resource List" to be enabled in settings)
         // URL format: https://res.cloudinary.com/{cloud_name}/image/list/{tag}.json
-        const response = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${tag}.json`);
+        const response = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${tag}.json`, {
+          signal: controller.signal,
+        });
 
         if (response.ok) {
           const data = await response.json();
@@ -32,23 +61,22 @@ export const useCloudinaryImages = (tag: string | undefined) => {
           );
 
           const urls = sortedResources.map((res: any) => {
-            const baseUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${res.version}/${res.public_id}.${res.format}`;
+            const transBase = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto`;
+            const verPath = `v${res.version}/${res.public_id}.${res.format}`;
             return {
-              src: `${baseUrl}?f_auto,q_auto,w_800`,
+              src: `${transBase},w_800/${verPath}`,
               srcSet: [
-                `${baseUrl}?f_auto,q_auto,w_400 400w`,
-                `${baseUrl}?f_auto,q_auto,w_800 800w`,
-                `${baseUrl}?f_auto,q_auto,w_1200 1200w`,
+                `${transBase},w_400/${verPath} 400w`,
+                `${transBase},w_800/${verPath} 800w`,
+                `${transBase},w_1200/${verPath} 1200w`,
               ].join(', '),
             };
           });
 
-          // Preload the first image immediately before setting state,
-          // so the browser cache has it ready by the time <img> renders
+          // Inject preload link for the first image immediately
+          // (before React re-renders — the browser starts fetching right away)
           if (urls.length > 0) {
-            const preloadImg = new Image();
-            preloadImg.src = urls[0].src;
-            preloadImg.srcset = urls[0].srcSet;
+            setPreloadLink(urls[0].src, urls[0].srcSet);
           }
 
           setImages(urls);
@@ -65,6 +93,10 @@ export const useCloudinaryImages = (tag: string | undefined) => {
     };
 
     fetchImages();
+
+    return () => {
+      controller.abort();
+    };
   }, [tag]);
 
   return { images, loading };

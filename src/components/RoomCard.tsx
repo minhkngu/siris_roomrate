@@ -172,7 +172,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
                     srcSet={imgData.srcSet}
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     alt={idx === currentIndex ? room.name : ''}
-                    className={`w-full h-full object-cover group-hover/carousel:scale-105 transition-transform duration-700 ${preloadedRef.current.has(idx) || total <= 1 ? 'opacity-100' : 'opacity-0'}`}
+                    className={`w-full h-full object-cover ${preloadedRef.current.has(idx) || total <= 1 ? 'opacity-100' : 'opacity-0'}`}
                     fetchPriority={idx === 0 ? 'high' : 'auto'}
                     decoding="async"
                     draggable={false}
@@ -194,14 +194,14 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
               <>
                 <button
                   onClick={prevImg}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-1.5 sm:p-2 rounded-full z-20 transition-all active:scale-90 shadow-md backdrop-blur-sm md:opacity-0 md:group-hover/carousel:opacity-100"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-1.5 sm:p-2 rounded-full z-20 transition-all active:scale-90 shadow-md backdrop-blur-sm"
                   aria-label="Previous image"
                 >
                   <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
                 </button>
                 <button
                   onClick={nextImg}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-1.5 sm:p-2 rounded-full z-20 transition-all active:scale-90 shadow-md backdrop-blur-sm md:opacity-0 md:group-hover/carousel:opacity-100"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-1.5 sm:p-2 rounded-full z-20 transition-all active:scale-90 shadow-md backdrop-blur-sm"
                   aria-label="Next image"
                 >
                   <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
