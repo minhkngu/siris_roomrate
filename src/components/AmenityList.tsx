@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, X } from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 
 interface AmenityListProps {
   included: string[];
@@ -11,22 +11,16 @@ export const AmenityList: React.FC<AmenityListProps> = ({ included, excluded = [
   const capitalize = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
   return (
-    <div className={`grid grid-cols-2 sm:grid-cols-3 ${compact ? 'gap-y-1 sm:gap-y-1.5 gap-x-2' : 'gap-y-2 sm:gap-y-3.5 gap-x-2 sm:gap-x-4'}`}>
+    <div className={`flex flex-wrap gap-2 ${compact ? 'mb-0' : 'mb-6'}`}>
       {included.map((amenity, idx) => (
-        <div key={`inc-${idx}`} className={`flex items-center gap-1.5 sm:gap-2.5 text-text font-medium ${compact ? 'text-[9px] sm:text-[10px]' : 'text-[10px] sm:text-xs'}`}>
-          <div className={`${compact ? 'w-3 h-3 sm:w-4 sm:h-4' : 'w-4 h-4 sm:w-5 sm:h-5'} rounded-full bg-positive-soft flex items-center justify-center text-positive shrink-0`}>
-            <Check size={compact ? 7 : 9} strokeWidth={3} />
-          </div>
-          <span className="leading-tight">{capitalize(amenity)}</span>
-        </div>
+        <span key={`inc-${idx}`} className={`bg-gray-50 text-slate-600 ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs'} rounded-lg font-medium border border-gray-100 flex items-center gap-1`}>
+          <CheckCircle2 size={compact ? 10 : 12} className="text-indigo-400" /> {capitalize(amenity)}
+        </span>
       ))}
       {excluded.map((amenity, idx) => (
-        <div key={`exc-${idx}`} className={`flex items-center gap-1.5 sm:gap-2.5 text-negative ${compact ? 'text-[9px] sm:text-[10px]' : 'text-[10px] sm:text-xs'}`}>
-          <div className={`${compact ? 'w-3 h-3 sm:w-4 sm:h-4' : 'w-4 h-4 sm:w-5 sm:h-5'} rounded-full bg-negative-soft flex items-center justify-center text-negative shrink-0`}>
-            <X size={compact ? 7 : 9} strokeWidth={3} />
-          </div>
-          <span className="leading-tight">{capitalize(amenity)}</span>
-        </div>
+        <span key={`exc-${idx}`} className={`bg-red-50 text-slate-500 ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs'} rounded-lg font-medium border border-red-100/50 flex items-center gap-1`}>
+          <XCircle size={compact ? 10 : 12} className="text-red-300" /> {capitalize(amenity)}
+        </span>
       ))}
     </div>
   );

@@ -10,16 +10,16 @@ interface SurchargeBannerProps {
 }
 
 export const SurchargeBanner: React.FC<SurchargeBannerProps> = ({ adjustments, lang, t }) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const currentMonth = today.getMonth();
-  const currentYear = today.getFullYear();
-
-  const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
-  const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-
   const filteredAdjustments = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+
+    const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+    const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+
     return adjustments.filter(adj => {
       if (adj.type !== 'surcharge') return false;
       const adjDate = new Date(adj.date);
@@ -35,7 +35,7 @@ export const SurchargeBanner: React.FC<SurchargeBannerProps> = ({ adjustments, l
 
       return isCurrentMonth || isNextMonth;
     }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [adjustments, today, currentMonth, currentYear, nextMonth, nextMonthYear]);
+  }, [adjustments]);
 
   if (filteredAdjustments.length === 0) return null;
 

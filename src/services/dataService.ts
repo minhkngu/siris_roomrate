@@ -95,7 +95,8 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<{
   masterPropertyAmenities: string[],
   masterRoomAmenities: string[],
   generalPolicies: Policy[],
-  dateAdjustments: DateAdjustment[]
+  dateAdjustments: DateAdjustment[],
+  settings: any[]
 }> => {
   const { branches, rooms, discounts, amenities, branchAmenities, roomAmenities, settings, dateAdjustments } = await fetchAllData();
 
@@ -269,6 +270,7 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<{
     masterPropertyAmenities: masterPropertyAmenities.length > 0 ? masterPropertyAmenities : (lang === 'en' ? ['Wifi', 'Cleaning', 'Elevator'] : ['Wifi', 'Dọn phòng', 'Thang máy']),
     masterRoomAmenities: masterRoomAmenities.length > 0 ? masterRoomAmenities : (lang === 'en' ? ['Air conditioning', 'Wifi', 'Balcony'] : ['Máy lạnh', 'Wifi', 'Ban công']),
     generalPolicies,
-    dateAdjustments
+    dateAdjustments,
+    settings
   };
 };

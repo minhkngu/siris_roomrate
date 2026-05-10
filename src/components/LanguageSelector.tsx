@@ -1,24 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../translations';
 
 interface LanguageSelectorProps {
   value: Language;
   onChange: (val: Language) => void;
   t: any;
+  theme?: 'light' | 'dark';
 }
 
-export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ value, onChange, t }) => {
+export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ value, onChange, theme = 'light' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const options: { value: Language, label: string, flag: string }[] = [
-    { value: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
-    { value: 'en', label: 'English', flag: '🇺🇸' }
-  ];
-
-  const selectedFlag = options.find(opt => opt.value === value)?.flag || '';
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -30,39 +24,33 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ value, onCha
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center gap-1 px-2 py-2 text-lg hover:opacity-80 transition-opacity min-w-[54px] h-[44px]"
-      >
-        <span>{selectedFlag}</span>
-        <ChevronDown size={14} className={`text-white/70 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
+  const handleSelect = (lang: Language) => {
+    onChange(lang);
+    setIsOpen(false);
+  };
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 5, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute top-full right-0 w-[50px] mt-2 bg-white border border-border rounded-xl sm:rounded-2xl shadow-2xl z-[100] overflow-hidden"
+  return (
+    <div className={`relative flex items-center gap-2 sm:border-l-2 cursor-pointer py-2 ${isDark ? 'sm:border-slate-800' : 'sm:border-gray-100'} sm:pl-6 group transition-all`} ref={dropdownRef} onClick={() => setIsOpen(!isOpen)}>
+      <span className={`font-bold uppercase tracking-tight text-sm ${isDark ? 'text-white group-hover:text-indigo-400' : 'text-slate-900 group-hover:text-indigo-600'} transition-colors`}>{value}</span>
+      <ChevronDown size={14} className={`${isDark ? 'text-slate-500' : 'text-slate-400'} ${isOpen ? 'rotate-180' : ''} transition-transform`} />
+
+      {/* Dropdown */}
+      <div className={`absolute top-full right-0 mt-3 w-40 bg-white border border-gray-100 shadow-2xl rounded-2xl overflow-hidden transition-all transform origin-top-right z-50 ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+        <div className="p-1.5">
+          <button
+            onClick={(e) => { e.stopPropagation(); handleSelect('vi'); }}
+            className={`w-full text-left px-4 py-2.5 text-sm rounded-xl transition-all ${value === 'vi' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-700 hover:bg-indigo-50 font-medium'}`}
           >
-            {options.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => {
-                  onChange(opt.value);
-                  setIsOpen(false);
-                }}
-                className={`w-full text-center py-3 text-lg transition-colors hover:bg-surface-alt flex items-center justify-center ${value === opt.value ? 'bg-accent-soft' : ''}`}
-              >
-                <span>{opt.flag}</span>
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            Tiếng Việt
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleSelect('en'); }}
+            className={`w-full text-left px-4 py-2.5 text-sm rounded-xl mt-1 transition-all ${value === 'en' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-700 hover:bg-indigo-50 font-medium'}`}
+          >
+            English
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

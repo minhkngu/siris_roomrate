@@ -1,58 +1,76 @@
 # Siris Residences 🏡
 
-Ứng dụng xem thông tin phòng nghỉ tại Siris Residences — hệ thống căn hộ dịch vụ cho thuê. Hỗ trợ Tiếng Việt & Tiếng Anh.
+Ứng dụng xem thông tin phòng nghỉ tại Siris Residences — hệ thống căn hộ dịch vụ cho thuê chuyên nghiệp. Giao diện hiện đại, tối giản, tối ưu hiệu năng.
 
 ---
 
-## Tính năng
+## Tính năng nổi bật
 
-- **Danh sách cơ sở** — Xem thông tin các cơ sở (địa chỉ, mô tả, hình ảnh)
-- **Chi tiết phòng** — Bảng giá ngày thường, cuối tuần, ngắn hạn, dài hạn
-- **Tiện ích** — Danh sách tiện ích có/không có theo từng phòng & cơ sở
-- **Chính sách & Quy định** — Chính sách chung và riêng từng cơ sở
-- **Phụ thu theo ngày** — Banner thông báo surcharge/discount
-- **Chuyển đổi ngôn ngữ** — Tiếng Việt / English
-- **Responsive** — Tối ưu mobile & desktop
-- **Lazy loading** — Ảnh & component tải chậm
+- **Điều hướng tức thì** — Chuyển đổi giữa Trang chủ và Chính sách chung bằng React State, không load lại trang.
+- **Thanh lọc cơ sở** — Sticky filter bar với underlined tabs, hỗ trợ cuộc ngang trên mobile.
+- **Bảng giá đa dạng** — Hiển thị giá ngày thường, cuối tuần, tháng ngắn/dài hạn.
+- **Carousel ảnh** — Điều hướng nhiều ảnh trên cả mobile & desktop.
+- **Chính sách chung** — Trang riêng với lazy loading, trình bày dạng bài viết.
+- **Phụ thu/thông báo** — Banner thông minh hiển thị surcharge theo tháng.
+- **Đa ngôn ngữ** — Hỗ trợ Tiếng Việt & Tiếng Anh.
+- **Responsive 100%** — Tối ưu cho mọi thiết bị.
 
 ---
 
-## Project Structure
+## Cấu trúc dự án
 
 ```
 src/
-├── App.tsx                    # Layout chính, data fetching
-├── types.ts                   # TypeScript interfaces
-├── translations.ts            # Song ngữ vi/en
-├── lib/supabase.ts            # Supabase client
-├── services/dataService.ts    # Fetch & transform data
-├── hooks/useCloudinaryImages.ts
+├── App.tsx                       # Logic chính, điều hướng, data fetching
+├── main.tsx                      # Entry point
+├── index.css                     # Tailwind config & custom theme
+├── types.ts                      # TypeScript interfaces
+├── translations.ts               # Song ngữ vi/en
+├── vite-env.d.ts                 # Vite env types
+├── lib/
+│   └── supabase.ts               # Supabase client config
+├── services/
+│   └── dataService.ts            # Fetch & transform dữ liệu (có cache)
+├── hooks/
+│   └── useCloudinaryImages.ts    # Lấy ảnh từ Cloudinary theo tag
 └── components/
-    ├── PropertyCard.tsx        # Thông tin cơ sở
-    ├── RoomCard.tsx            # Thông tin loại phòng
-    ├── AmenityList.tsx         # Danh sách tiện ích
-    ├── GeneralPolicies.tsx     # Chính sách chung
-    ├── SurchargeBanner.tsx     # Phụ thu theo ngày
-    └── LanguageSelector.tsx    # Chuyển đổi ngôn ngữ
+    ├── RoomCard.tsx              # Thẻ phòng + carousel ảnh
+    ├── AmenityList.tsx           # Danh sách tiện ích (CheckCircle / XCircle)
+    ├── GeneralPolicies.tsx       # Nội dung chính sách chung
+    ├── SurchargeBanner.tsx       # Banner phụ thu/giảm giá
+    ├── LanguageSelector.tsx      # Dropdown chọn ngôn ngữ
+    └── Footer.tsx                # Footer responsive (mobile/desktop)
 ```
 
-## Run Locally
+---
+
+## Cài đặt và Chạy
 
 ```bash
 npm install
-npm run dev       # http://localhost:3000
-npm run build     # Production build
-npm run lint      # TypeScript check
+npm run dev       # http://localhost:5173 (Vite default)
+npm run build     # Build production vào /dist
 ```
 
-## Tech Stack
+---
 
-**React 19** · **Vite 6** · **TypeScript** · **Tailwind CSS 4** · **Supabase** · **Lucide React** · **Cloudinary**
+## Công nghệ
 
-## Data Source (Supabase)
+- **Frontend:** React 19, Vite 6, TypeScript
+- **Styling:** Tailwind CSS 4
+- **Database:** Supabase
+- **Icons:** Lucide React
+- **Images:** Cloudinary
 
-`branches` · `room_types` · `amenities` · `settings` · `date_adjustments` · `stay_discounts`
+---
 
-## Future Updates
+## Cập nhật gần nhất
 
-Xem thư mục [`updates/`](./updates/) để theo dõi các tính năng dự kiến.
+1. **Tối ưu hiệu năng:** Xóa dead code (`HeroBanner`, `SearchBar`, unused imports), dùng `useMemo` cho hero title & settings, gộp settings lookups.
+2. **Fix bug:** `t.lang` trong `GeneralPolicies` → thay bằng prop `lang` chính xác.
+3. **Footer responsive:** Layout riêng cho mobile (xếp dọc, căn giữa) và desktop (2 cột brand + contact), link "Chính sách chung" chỉ hiện trên mobile.
+4. **CSS nhất quán:** Dùng utility `scrollbar-hide` từ `index.css` thay vì inline style.
+
+---
+
+© 2026 Siris Residences. All rights reserved.

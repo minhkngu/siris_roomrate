@@ -1,55 +1,40 @@
-import React, { useState } from 'react';
-import { Shield, ChevronDown, Check } from 'lucide-react';
+import React from 'react';
 import { Policy } from '../types';
+import { Language } from '../translations';
 
 interface GeneralPoliciesProps {
   policies: Policy[];
   t: any;
+  contactEmail?: string;
+  contactPhone?: string;
+  lang?: Language;
 }
 
-export const GeneralPolicies: React.FC<GeneralPoliciesProps> = ({ policies, t }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
+export const GeneralPolicies: React.FC<GeneralPoliciesProps> = ({ policies, t, contactEmail, contactPhone, lang = 'vi' }) => {
   return (
-    <div
-      id="policies-section"
-      className="bg-white rounded-[24px] sm:rounded-[32px] border border-border shadow-sm mb-6 sm:mb-10 overflow-hidden"
-    >
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-5 sm:p-8 flex items-center justify-between hover:bg-accent-soft/30 transition-colors text-left"
-      >
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent-soft rounded-xl sm:rounded-2xl flex items-center justify-center text-accent shrink-0">
-            <Shield size={20} className="sm:w-6 sm:h-6" />
-          </div>
-          <div>
-            <h3 className="text-lg sm:text-xl font-bold text-text tracking-tight">{t.generalPolicies}</h3>
-            <p className="text-[10px] sm:text-xs text-text-muted font-medium uppercase tracking-wider">{t.generalPoliciesSub}</p>
-          </div>
-        </div>
-        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-surface-alt flex items-center justify-center text-text-muted transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
-          <ChevronDown size={20} />
-        </div>
-      </button>
+    <article className="bg-white p-6 sm:p-10 md:p-16 sm:shadow-sm sm:rounded-3xl sm:border border-gray-100 max-w-4xl mx-auto -mx-4 sm:mx-auto">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 sm:mb-4 text-center tracking-tight">
+        {t.generalPolicies}
+      </h1>
+      <p className="text-gray-400 mb-10 sm:mb-12 text-[10px] sm:text-sm italic text-center uppercase tracking-widest font-medium">
+        {t.lastUpdated || (lang === 'en' ? 'Last updated: May 09, 2026' : 'Cập nhật lần cuối: 09/05/2026')}
+      </p>
 
-      {isExpanded && (
-        <div className="overflow-hidden">
-          <div className="px-5 pb-5 sm:px-8 sm:pb-8 space-y-3 sm:space-y-4 border-t border-border-light pt-5 sm:pt-8">
-            {policies.map((policy, idx) => (
-              <div key={idx} className="flex gap-3 sm:gap-4 p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-surface border border-border hover:bg-white hover:shadow-sm hover:border-accent-soft transition-all duration-300">
-                <div className="mt-1 w-5 h-5 rounded-full bg-positive-soft flex items-center justify-center text-positive shrink-0">
-                  <Check size={12} strokeWidth={3} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-text mb-1">{policy.title}</h4>
-                  <p className="text-xs text-text-muted leading-relaxed whitespace-pre-line">{policy.content}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+      <div className="space-y-10 sm:space-y-12 md:space-y-16">
+        {policies.map((policy, idx) => (
+          <section key={idx} className="relative">
+            <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <span className="w-1.5 h-6 sm:h-8 bg-indigo-600 rounded-full shrink-0 mt-1"></span>
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">
+                {idx + 1}. {policy.title}
+              </h2>
+            </div>
+            <div className="text-gray-600 leading-relaxed text-sm sm:text-base whitespace-pre-line pl-4 sm:pl-6 border-l border-gray-100 ml-[3px] sm:ml-[4px]">
+              {policy.content}
+            </div>
+          </section>
+        ))}
+      </div>
+    </article>
   );
 };

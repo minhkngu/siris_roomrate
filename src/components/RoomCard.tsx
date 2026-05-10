@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Waves, ChevronRight, Maximize2 } from 'lucide-react';
+import { Waves, ChevronRight, ChevronLeft, Maximize } from 'lucide-react';
 import { RoomType } from '../types';
 import { Language } from '../translations';
 import { useCloudinaryImages } from '../hooks/useCloudinaryImages';
@@ -9,7 +9,7 @@ const priceFormatter = new Intl.NumberFormat('vi-VN');
 
 const formatPrice = (price: number | null | undefined) => {
   if (!price || price === 0) return 'N/A';
-  return `${priceFormatter.format(price)} VND`;
+  return `${priceFormatter.format(price)}`;
 };
 
 interface RoomCardProps {
@@ -30,93 +30,124 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
     }
   }, [images.length, currentImageIndex]);
 
+  const nextImg = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
+
+  const prevImg = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl border border-border overflow-hidden hover:shadow-lg hover:shadow-brand/5 transition-all duration-300">
-      <div className="flex flex-col sm:flex-row">
-        <div className="w-full aspect-[16/9] sm:w-80 sm:aspect-[4/3] relative group bg-surface-alt shrink-0 overflow-hidden">
-          {loading ? (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-border border-t-accent rounded-full animate-spin" />
+    <div className="bg-white rounded-[2rem] overflow-hidden border-2 border-gray-200/80 shadow-md hover:border-indigo-300 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all group h-full flex flex-col">
+      <div className="relative h-48 sm:h-64 overflow-hidden group/carousel bg-gray-50 shrink-0 border-b border-gray-100">
+        {loading ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          </div>
+        ) : images.length > 0 ? (
+          <img
+            key={images[currentImageIndex]}
+            src={images[currentImageIndex]}
+            alt={room.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover/carousel:scale-105"
+            referrerPolicy="no-referrer"
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-slate-300">
+            <Waves size={40} strokeWidth={1} />
+          </div>
+        )}
+
+        {images.length > 1 && (
+          <>
+            <button onClick={prevImg} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-1 sm:p-1.5 rounded-full z-10 transition-all active:scale-90 shadow-sm">
+              <ChevronLeft className="w-4 h-4 sm:w-5 h-5" strokeWidth={2.5} />
+            </button>
+            <button onClick={nextImg} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-1 sm:p-1.5 rounded-full z-10 transition-all active:scale-90 shadow-sm">
+              <ChevronRight className="w-4 h-4 sm:w-5 h-5" strokeWidth={2.5} />
+            </button>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+              {images.map((_, idx) => (
+                <div key={idx} className={`h-1.5 rounded-full transition-all ${idx === currentImageIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`} />
+              ))}
             </div>
-          ) : images.length > 0 ? (
-            <>
-              <img
-                key={images[currentImageIndex]}
-                src={images[currentImageIndex]}
-                alt={room.name}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                referrerPolicy="no-referrer"
-                loading="lazy"
-                decoding="async"
-              />
-            </>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-text-dim">
-              <Waves size={40} strokeWidth={1} />
-            </div>
-          )}
-          {images.length > 1 && (
-            <>
-              <div className="absolute inset-0 flex items-center justify-between px-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity pointer-events-none">
-                <button
-                  onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1)); }}
-                  className="w-7 h-7 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-text hover:bg-white transition-all active:scale-90 shadow-sm pointer-events-auto"
-                >
-                  <ChevronRight size={14} className="rotate-180" />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1)); }}
-                  className="w-7 h-7 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-text hover:bg-white transition-all active:scale-90 shadow-sm pointer-events-auto"
-                >
-                  <ChevronRight size={14} />
-                </button>
-              </div>
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 px-2 py-1 bg-black/20 backdrop-blur-md rounded-full">
-                {images.map((_, idx) => (
-                  <div
-                    key={idx}
-                    className={`w-1 h-1 rounded-full transition-all duration-300 ${idx === currentImageIndex ? 'bg-white w-3' : 'bg-white/40'}`}
-                  />
-                ))}
-              </div>
-            </>
-          )}
+          </>
+        )}
+
+        {room.sqm && room.sqm > 0 && (
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-indigo-600/90 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1.5 rounded-full flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-bold shadow-md z-10 text-white border border-indigo-400/30">
+            <Maximize size={12} className="text-white sm:w-3.5 sm:h-3.5" />
+            {room.sqm} {t.sqm}
+          </div>
+        )}
+      </div>
+
+      <div className="p-4 sm:p-5 flex flex-col flex-1">
+        <div className="mb-3">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <span className="text-base sm:text-lg font-bold text-indigo-600 uppercase tracking-tight shrink-0">
+              {branchTag || 'Siris'}
+            </span>
+            <h3 className="text-base sm:text-lg font-bold text-slate-800 truncate" title={room.name}>
+              {room.name}
+            </h3>
+          </div>
         </div>
 
-        <div className="flex-1 flex flex-col">
-          <div className="p-4 sm:p-5 flex-1">
-            <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
-              <h4 className="text-[22px] font-bold text-text">{room.name}</h4>
-              {room.sqm && room.sqm > 0 && (
-                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-positive-soft text-positive border border-positive-soft rounded-md text-[9px] sm:text-[10px] font-bold shrink-0">
-                  <Maximize2 size={10} className="sm:w-3 sm:h-3" strokeWidth={3} />
-                  <span>{room.sqm} {t.sqm}</span>
-                </div>
-              )}
+        <div className="mb-4 flex-1">
+          <AmenityList included={room.amenities} excluded={room.excludedAmenities} compact={true} />
+        </div>
+
+        <div className="pt-4 border-t-2 border-gray-100 mt-auto">
+          {/* Daily Prices */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-5">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                {lang === 'en' ? 'Sun - Thu' : 'CN - T5'}
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-slate-800 whitespace-nowrap">
+                {formatPrice(room.pricing.weekday)} VND
+              </span>
             </div>
-            <AmenityList included={room.amenities} excluded={room.excludedAmenities} compact={true} />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                {lang === 'en' ? 'Fri - Sat' : 'T6 - T7'}
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-slate-800 whitespace-nowrap">
+                {formatPrice(room.pricing.weekend)} VND
+              </span>
+            </div>
           </div>
 
-          <div className="bg-white px-4 py-3.5 sm:p-5 border-t border-t-border sm:border-t-0 sm:border-l border-l-border">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 sm:gap-4">
-              {[
-                { label: t.weekday, price: room.pricing.weekday },
-                { label: t.weekend, price: room.pricing.weekend },
-                { label: t.monthlyShort, price: room.pricing.monthlyUnder3, color: 'text-positive' },
-                { label: t.monthlyLong, price: room.pricing.monthlyOver3, color: 'text-positive', showFees: true }
-              ].map((item, idx) => (
-                <div key={idx} className="flex flex-col">
-                  <span className="text-[8px] sm:text-[9px] text-text-muted uppercase font-bold tracking-wider mb-0.5">{item.label}</span>
-                  <span className={`text-[10px] sm:text-xs font-bold ${item.color || 'text-text'}`}>
-                    {item.price ? formatPrice(item.price) : 'N/A'}
-                  </span>
-                  {item.showFees && room.pricing.fees && (
-                    <span className="text-[8px] sm:text-[9px] text-text-muted mt-1 leading-tight whitespace-pre-line">
-                      {room.pricing.fees}
-                    </span>
-                  )}
-                </div>
-              ))}
+          {/* Monthly Prices */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-4">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                {t.monthlyUnder3Label || (lang === 'en' ? 'MONTH (<3M)' : 'THÁNG (<3TH)')}
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-indigo-600 whitespace-nowrap">
+                {formatPrice(room.pricing.monthlyUnder3)} VND
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                {t.monthlyOver3Label || (lang === 'en' ? 'MONTH (>3M) + FEES' : 'THÁNG (>3TH) + PHÍ')}
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-indigo-600 mb-1 whitespace-nowrap">
+                {formatPrice(room.pricing.monthlyOver3)} {room.pricing.monthlyOver3 && room.pricing.monthlyOver3 > 0 ? 'VND' : ''}
+              </span>
+
+              {/* Fees Detail aligned under column 2 */}
+              {room.pricing.fees && (
+                <p className="text-[10px] text-slate-400 whitespace-pre-line leading-normal font-medium">
+                  {room.pricing.fees}
+                </p>
+              )}
             </div>
           </div>
         </div>

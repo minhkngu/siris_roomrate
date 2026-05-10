@@ -25,6 +25,14 @@ export const translations = {
     surchargeNotification: 'Thông báo phụ thu',
     surcharge: 'Phụ thu',
     vnd: 'VND',
+    heroTitle: 'Khám phá không gian sống mới',
+    heroSubtitle: 'Hệ thống phòng hiện đại, trẻ trung tại các vị trí đắc địa nhất thành phố. Trải nghiệm sống đẳng cấp với đầy đủ tiện nghi.',
+    searchPlaceholder: 'Tìm tên phòng hoặc loại phòng...',
+    allFacilities: 'Tất cả cơ sở',
+    notFoundTitle: 'Không tìm thấy phòng',
+    notFoundSub: 'Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn.',
+    resetFilters: 'Đặt lại tất cả bộ lọc',
+    leasePolicy: 'Chính sách thuê',
   },
   en: {
     selectLanguage: 'Select Language',
@@ -50,6 +58,14 @@ export const translations = {
     surchargeNotification: 'Surcharge Notification',
     surcharge: 'Surcharge',
     vnd: 'VND',
+    heroTitle: 'Discover a new living space',
+    heroSubtitle: 'Modern, youthful room system at the prime locations of the city. Premium living experience with full amenities.',
+    searchPlaceholder: 'Search room name or type...',
+    allFacilities: 'All Facilities',
+    notFoundTitle: 'No rooms found',
+    notFoundSub: 'Try adjusting your filters or search keywords.',
+    resetFilters: 'Reset all filters',
+    leasePolicy: 'Lease Policy',
   }
 };
 
