@@ -64,11 +64,12 @@ export const useCloudinaryImages = (tag: string | undefined) => {
             const transBase = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto`;
             const verPath = `v${res.version}/${res.public_id}.${res.format}`;
             return {
-              src: `${transBase},w_800/${verPath}`,
+              src: `${transBase},w_600/${verPath}`,
               srcSet: [
-                `${transBase},w_400/${verPath} 400w`,
-                `${transBase},w_800/${verPath} 800w`,
-                `${transBase},w_1200/${verPath} 1200w`,
+                `${transBase},w_300/${verPath} 300w`,
+                `${transBase},w_450/${verPath} 450w`,
+                `${transBase},w_600/${verPath} 600w`,
+                `${transBase},w_900/${verPath} 900w`,
               ].join(', '),
             };
           });
