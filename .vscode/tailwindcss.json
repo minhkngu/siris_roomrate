@@ -1,0 +1,25 @@
+{
+    "version": 1.1,
+    "atDirectives": [
+        {
+            "name": "@theme",
+            "description": "Tailwind CSS v4 directive for defining custom design tokens and theme values."
+        },
+        {
+            "name": "@utility",
+            "description": "Tailwind CSS v4 directive for creating custom utility classes."
+        },
+        {
+            "name": "@layer",
+            "description": "Tailwind CSS v4 directive for organizing styles into base, components, and utilities layers."
+        },
+        {
+            "name": "@keyframes",
+            "description": "Standard CSS @keyframes rule for defining animation sequences."
+        },
+        {
+            "name": "@import",
+            "description": "CSS @import rule for including external stylesheets."
+        }
+    ]
+}

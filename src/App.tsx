@@ -183,17 +183,17 @@ export default function App() {
         {!loading && properties.length > 0 && (
           <>
             {/* Header Section */}
-            <div className="mb-6 sm:mb-10 min-h-[100px] sm:min-h-[120px] flex flex-col justify-center">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-3 sm:mb-4 text-slate-900 leading-tight">
+            <div className="mb-4 sm:mb-6 min-h-[60px] sm:min-h-[80px] flex flex-col justify-center">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-1 sm:mb-2 text-slate-900 leading-tight">
                 {heroTitleElements}
               </h1>
-              <p className="text-slate-600 text-base sm:text-lg leading-relaxed">
+              <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
                 {heroSubtitle}
               </p>
             </div>
 
             {/* Filter Bar - Modern Underlined Tabs */}
-            <div className="sticky top-16 z-40 bg-white/90 backdrop-blur-xl pt-4 mb-8 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-slate-200/80 shadow-sm">
+            <div className="sticky top-16 z-40 bg-white/90 backdrop-blur-xl pt-2 mb-6 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-slate-200/80 shadow-sm">
               <div className="flex gap-8 overflow-x-auto w-full scrollbar-hide px-2">
                 <button
                   onClick={() => setActiveFacility('all')}
