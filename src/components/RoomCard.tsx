@@ -22,42 +22,48 @@ interface RoomCardProps {
 export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) => {
   const cloudinaryTag = branchTag && room.tag ? `${branchTag}_${room.tag}` : undefined;
   const { images, loading } = useCloudinaryImages(cloudinaryTag);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [translateX, setTranslateX] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [slideOffset, setSlideOffset] = useState(0);
+  const [isSliding, setIsSliding] = useState(false);
   const [showNudge, setShowNudge] = useState(true);
   const preloadedRef = useRef<Set<number>>(new Set());
-  const imageRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Touch swipe state
+  // Touch state
   const touchStartX = useRef(0);
   const isSwiping = useRef(false);
 
-  const totalImages = images.length;
-  const hasMultipleImages = totalImages > 1;
+  const total = images.length;
+  const hasMultiple = total > 1;
 
-  // Preload adjacent images
+  // Preload first image immediately
   useEffect(() => {
-    if (totalImages === 0) return;
-
-    const preload = (index: number) => {
-      if (preloadedRef.current.has(index)) return;
-      preloadedRef.current.add(index);
+    if (images.length > 0 && !preloadedRef.current.has(0)) {
+      preloadedRef.current.add(0);
       const img = new Image();
-      img.src = images[index];
-    };
+      img.src = images[0];
+    }
+  }, [images]);
 
-    // Preload current, next, and prev
-    preload(currentImageIndex);
-    preload((currentImageIndex + 1) % totalImages);
-    preload((currentImageIndex - 1 + totalImages) % totalImages);
-  }, [images, currentImageIndex, totalImages]);
-
-  // Preload all remaining images in background after first load
+  // Preload adjacent
   useEffect(() => {
-    if (totalImages <= 2 || preloadedRef.current.size >= totalImages) return;
+    if (total === 0) return;
+    const preload = (idx: number) => {
+      if (preloadedRef.current.has(idx)) return;
+      preloadedRef.current.add(idx);
+      const img = new Image();
+      img.src = images[idx];
+    };
+    preload(currentIndex);
+    preload((currentIndex + 1) % total);
+    preload((currentIndex - 1 + total) % total);
+  }, [images, currentIndex, total]);
+
+  // Preload rest in background
+  useEffect(() => {
+    if (total <= 2 || preloadedRef.current.size >= total) return;
     const timer = setTimeout(() => {
-      for (let i = 0; i < totalImages; i++) {
+      for (let i = 0; i < total; i++) {
         if (!preloadedRef.current.has(i)) {
           preloadedRef.current.add(i);
           const img = new Image();
@@ -66,100 +72,81 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
       }
     }, 2000);
     return () => clearTimeout(timer);
-  }, [totalImages, images]);
+  }, [total, images]);
 
-  // One-time nudge animation on first load when multiple images
+  // Auto-dismiss nudge
   useEffect(() => {
-    if (hasMultipleImages && !loading && showNudge) {
+    if (hasMultiple && !loading && showNudge) {
       const timer = setTimeout(() => setShowNudge(false), 2000);
       return () => clearTimeout(timer);
     }
-  }, [hasMultipleImages, loading, showNudge]);
+  }, [hasMultiple, loading, showNudge]);
 
-  // Reset index when images change
+  // Reset index on image change
   useEffect(() => {
-    if (currentImageIndex >= totalImages) {
-      setCurrentImageIndex(0);
-    }
-  }, [totalImages, currentImageIndex]);
+    if (currentIndex >= total) setCurrentIndex(0);
+  }, [total, currentIndex]);
 
-  const goToImage = useCallback((newIndex: number) => {
-    setTranslateX(0);
-    setCurrentImageIndex(newIndex);
-  }, []);
+  const slideTo = useCallback((newIndex: number, dir: 'left' | 'right') => {
+    if (isSliding || newIndex === currentIndex) return;
+    setIsSliding(true);
+    setSlideOffset(dir === 'right' ? -100 : 100);
+    // Trigger reflow
+    requestAnimationFrame(() => {
+      setCurrentIndex(newIndex);
+      setSlideOffset(0);
+      setTimeout(() => setIsSliding(false), 300);
+    });
+  }, [isSliding, currentIndex]);
 
   const nextImg = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    const newIndex = (currentImageIndex + 1) % totalImages;
-    goToImage(newIndex);
-  }, [currentImageIndex, totalImages, goToImage]);
+    slideTo((currentIndex + 1) % total, 'right');
+  }, [currentIndex, total, slideTo]);
 
   const prevImg = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    const newIndex = (currentImageIndex - 1 + totalImages) % totalImages;
-    goToImage(newIndex);
-  }, [currentImageIndex, totalImages, goToImage]);
+    slideTo((currentIndex - 1 + total) % total, 'left');
+  }, [currentIndex, total, slideTo]);
 
-  // Touch handlers for swipe with follow effect
+  // Touch handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     isSwiping.current = true;
-    setIsDragging(true);
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isSwiping.current) return;
-    const currentX = e.touches[0].clientX;
-    const diff = currentX - touchStartX.current;
-    setTranslateX(diff);
   }, []);
 
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (!isSwiping.current) return;
     isSwiping.current = false;
-    setIsDragging(false);
-
-    const swipeDistance = translateX;
-    const minSwipeDistance = 50;
-
-    if (Math.abs(swipeDistance) < minSwipeDistance) {
-      goToImage(currentImageIndex);
-      return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) >= 50) {
+      if (diff > 0) slideTo((currentIndex + 1) % total, 'right');
+      else slideTo((currentIndex - 1 + total) % total, 'left');
     }
+  }, [currentIndex, total, slideTo]);
 
-    if (swipeDistance < 0) {
-      const newIndex = (currentImageIndex + 1) % totalImages;
-      goToImage(newIndex);
-    } else {
-      const newIndex = (currentImageIndex - 1 + totalImages) % totalImages;
-      goToImage(newIndex);
-    }
-  }, [currentImageIndex, totalImages, goToImage, translateX]);
-
-  // Keyboard navigation
+  // Keyboard
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!hasMultipleImages) return;
-      if (e.key === 'ArrowLeft') {
-        const newIndex = (currentImageIndex - 1 + totalImages) % totalImages;
-        goToImage(newIndex);
-      } else if (e.key === 'ArrowRight') {
-        const newIndex = (currentImageIndex + 1) % totalImages;
-        goToImage(newIndex);
-      }
+      if (!hasMultiple) return;
+      if (e.key === 'ArrowLeft') slideTo((currentIndex - 1 + total) % total, 'left');
+      else if (e.key === 'ArrowRight') slideTo((currentIndex + 1) % total, 'right');
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentImageIndex, totalImages, hasMultipleImages, goToImage]);
+  }, [currentIndex, total, hasMultiple, slideTo]);
 
-  // Check if current image is ready (preloaded or only 1 image)
-  const isImageReady = preloadedRef.current.has(currentImageIndex) || totalImages <= 1;
+  const isReady = preloadedRef.current.has(currentIndex) || total <= 1;
 
   return (
     <div className="bg-white rounded-[2rem] overflow-hidden border-2 border-gray-200/80 shadow-md hover:border-indigo-300 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all group h-full flex flex-col">
       <div
-        ref={imageRef}
-        className="relative h-56 sm:h-72 overflow-hidden group/carousel bg-gray-100 shrink-0 border-b border-gray-100"
+        ref={containerRef}
+        className="relative h-56 sm:h-72 overflow-hidden group/carousel bg-gray-100 shrink-0 border-b border-gray-100 select-none"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -169,21 +156,39 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
             <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
           </div>
         ) : images.length > 0 ? (
-          <div className="relative w-full h-full">
-            <img
-              key={`img-${currentImageIndex}`}
-              src={images[currentImageIndex]}
-              alt={room.name}
-              style={isDragging ? { transform: `translateX(${translateX}px)`, transition: 'none' } : undefined}
-              className={`w-full h-full object-cover transition-all duration-300 group-hover/carousel:scale-105 ${isDragging ? '' : 'translate-x-0'} ${isImageReady ? 'opacity-100' : 'opacity-0'} ${showNudge && currentImageIndex === 0 ? 'animate-nudge-left' : ''}`}
-              referrerPolicy="no-referrer"
-              fetchPriority={currentImageIndex === 0 ? 'high' : 'auto'}
-              decoding="async"
-              draggable={false}
-            />
+          <div className="relative w-full h-full overflow-hidden">
+            {/* Slide track - holds all images side by side */}
+            <div
+              className="flex h-full transition-transform duration-300 ease-out"
+              style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+            >
+              {images.map((src, idx) => (
+                <div key={idx} className="w-full h-full shrink-0 relative">
+                  {!preloadedRef.current.has(idx) && total > 1 && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-pulse" />
+                  )}
+                  <img
+                    src={src}
+                    alt={idx === currentIndex ? room.name : ''}
+                    className={`w-full h-full object-cover group-hover/carousel:scale-105 transition-transform duration-700 ${preloadedRef.current.has(idx) || total <= 1 ? 'opacity-100' : 'opacity-0'}`}
+                    fetchPriority={idx === 0 ? 'high' : 'auto'}
+                    decoding="async"
+                    draggable={false}
+                    loading={idx > 2 ? 'lazy' : 'eager'}
+                  />
+                </div>
+              ))}
+            </div>
 
-            {/* Navigation arrows - always visible on mobile, on hover on desktop */}
-            {hasMultipleImages && (
+            {/* Nudge hint */}
+            {hasMultiple && showNudge && currentIndex === 0 && (
+              <div className="absolute inset-0 pointer-events-none z-10">
+                <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-black/30 to-transparent animate-pulse" />
+              </div>
+            )}
+
+            {/* Navigation arrows */}
+            {hasMultiple && (
               <>
                 <button
                   onClick={prevImg}
@@ -200,7 +205,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
                   <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
                 </button>
 
-                {/* Dots indicator */}
+                {/* Dots */}
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
                   {images.map((_, idx) => (
                     <button
@@ -208,9 +213,10 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowNudge(false);
-                        goToImage(idx);
+                        const dir = idx > currentIndex ? 'right' : 'left';
+                        slideTo(idx, dir);
                       }}
-                      className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentImageIndex ? 'w-5 bg-white shadow-sm' : 'w-1.5 bg-white/50 hover:bg-white/70'}`}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentIndex ? 'w-5 bg-white shadow-sm' : 'w-1.5 bg-white/50 hover:bg-white/70'}`}
                       aria-label={`Go to image ${idx + 1}`}
                     />
                   ))}
@@ -232,10 +238,10 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
           </div>
         )}
 
-        {/* Image counter badge */}
-        {hasMultipleImages && (
+        {/* Counter */}
+        {hasMultiple && (
           <div className="absolute top-3 left-3 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded-full text-[10px] font-bold text-white z-20">
-            {currentImageIndex + 1}/{totalImages}
+            {currentIndex + 1}/{total}
           </div>
         )}
       </div>
@@ -257,7 +263,6 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
         </div>
 
         <div className="pt-4 border-t-2 border-gray-100 mt-auto">
-          {/* Daily Prices */}
           <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-5">
             <div className="flex flex-col">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
@@ -277,7 +282,6 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
             </div>
           </div>
 
-          {/* Monthly Prices */}
           <div className="grid grid-cols-2 gap-2 sm:gap-4">
             <div className="flex flex-col">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
@@ -294,7 +298,6 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
               <span className="text-xs sm:text-sm font-bold text-indigo-600 mb-1 whitespace-nowrap">
                 {formatPrice(room.pricing.monthlyOver3)} {room.pricing.monthlyOver3 && room.pricing.monthlyOver3 > 0 ? 'VND' : ''}
               </span>
-
               {room.pricing.fees && (
                 <p className="text-[10px] text-slate-400 whitespace-pre-line leading-normal font-medium">
                   {room.pricing.fees}
