@@ -24,7 +24,6 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
   const cloudinaryTag = branchTag && room.tag ? `${branchTag}_${room.tag}` : undefined;
   const { images, loading } = useCloudinaryImages(cloudinaryTag, priority);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [slideOffset, setSlideOffset] = useState(0);
   const [isSliding, setIsSliding] = useState(false);
   const [showNudge, setShowNudge] = useState(true);
   const preloadedRef = useRef<Set<number>>(new Set());
@@ -93,14 +92,9 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
 
   const slideTo = useCallback((newIndex: number, dir: 'left' | 'right') => {
     if (isSliding || newIndex === currentIndex) return;
+    setCurrentIndex(newIndex);
     setIsSliding(true);
-    setSlideOffset(dir === 'right' ? -100 : 100);
-    // Trigger reflow
-    requestAnimationFrame(() => {
-      setCurrentIndex(newIndex);
-      setSlideOffset(0);
-      setTimeout(() => setIsSliding(false), 300);
-    });
+    setTimeout(() => setIsSliding(false), 300);
   }, [isSliding, currentIndex]);
 
   const nextImg = useCallback((e: React.MouseEvent) => {
