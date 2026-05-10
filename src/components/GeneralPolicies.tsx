@@ -12,15 +12,11 @@ interface GeneralPoliciesProps {
 
 export const GeneralPolicies: React.FC<GeneralPoliciesProps> = ({ policies, t, contactEmail, contactPhone, lang = 'vi' }) => {
   return (
-    <article className="bg-white p-6 sm:p-10 md:p-16 sm:shadow-sm sm:rounded-3xl sm:border border-gray-100 max-w-4xl mx-auto -mx-4 sm:mx-auto">
-      <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 sm:mb-4 text-center tracking-tight">
-        {t.generalPolicies}
-      </h1>
-      <p className="text-gray-400 mb-10 sm:mb-12 text-[10px] sm:text-sm italic text-center uppercase tracking-widest font-medium">
-        {t.lastUpdated || (lang === 'en' ? 'Last updated: May 09, 2026' : 'Cập nhật lần cuối: 09/05/2026')}
-      </p>
-
+    <article className="bg-white max-w-4xl mx-auto px-6 sm:px-10 md:px-16 py-8 sm:py-12 md:py-16">
       <div className="space-y-10 sm:space-y-12 md:space-y-16">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 text-center tracking-tight">
+          {t.generalPolicies}
+        </h1>
         {policies.map((policy, idx) => (
           <section key={idx} className="relative">
             <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">

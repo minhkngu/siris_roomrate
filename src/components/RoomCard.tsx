@@ -22,7 +22,7 @@ interface RoomCardProps {
 
 export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, priority }) => {
   const cloudinaryTag = branchTag && room.tag ? `${branchTag}_${room.tag}` : undefined;
-  const { images, loading } = useCloudinaryImages(cloudinaryTag);
+  const { images, loading } = useCloudinaryImages(cloudinaryTag, priority);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [slideOffset, setSlideOffset] = useState(0);
   const [isSliding, setIsSliding] = useState(false);
@@ -144,13 +144,14 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentIndex, total, hasMultiple, slideTo]);
 
-  const isReady = preloadedRef.current.has(currentIndex) || total <= 1;
+  // We use the loading state from the hook to show the shimmer
+  // The images will fade in naturally once loaded by the browser
 
   return (
     <div className="bg-white rounded-[2rem] overflow-hidden border-2 border-gray-200/80 shadow-md hover:border-indigo-300 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all group h-full flex flex-col">
       <div
         ref={containerRef}
-        className={`relative h-64 sm:h-72 overflow-hidden group/carousel bg-gray-100 shrink-0 border-b border-gray-100 select-none ${loading ? 'animate-shimmer bg-gray-200' : ''}`}
+        className={`relative h-64 sm:h-80 overflow-hidden group/carousel bg-gray-100 shrink-0 border-b border-gray-100 select-none ${loading ? 'animate-shimmer bg-gray-200' : ''}`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -164,15 +165,12 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
             >
               {images.map((imgData, idx) => (
                 <div key={idx} className="w-full h-full shrink-0 relative">
-                  {!preloadedRef.current.has(idx) && total > 1 && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-pulse" />
-                  )}
                   <img
                     src={imgData.src}
                     srcSet={imgData.srcSet}
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     alt={idx === currentIndex ? room.name : ''}
-                    className={`w-full h-full object-cover ${preloadedRef.current.has(idx) || total <= 1 ? 'opacity-100' : 'opacity-0'}`}
+                    className="w-full h-full object-cover"
                     fetchPriority={idx === 0 ? 'high' : 'auto'}
                     decoding="async"
                     draggable={false}
@@ -267,7 +265,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
         <div className="pt-4 border-t-2 border-gray-100 mt-auto">
           <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-5">
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-0.5 whitespace-nowrap">
                 {lang === 'en' ? 'Sun - Thu' : 'CN - T5'}
               </span>
               <span className="text-xs sm:text-sm font-bold text-slate-800 whitespace-nowrap">
@@ -275,7 +273,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
               </span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-0.5 whitespace-nowrap">
                 {lang === 'en' ? 'Fri - Sat' : 'T6 - T7'}
               </span>
               <span className="text-xs sm:text-sm font-bold text-slate-800 whitespace-nowrap">
@@ -286,7 +284,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
 
           <div className="grid grid-cols-2 gap-2 sm:gap-4">
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-0.5 whitespace-nowrap">
                 {t.monthlyUnder3Label || (lang === 'en' ? 'MONTH (<3M)' : 'THÁNG (<3TH)')}
               </span>
               <span className="text-xs sm:text-sm font-bold text-indigo-600 whitespace-nowrap">
@@ -294,14 +292,14 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
               </span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-0.5 whitespace-nowrap">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-0.5 whitespace-nowrap">
                 {t.monthlyOver3Label || (lang === 'en' ? 'MONTH (>3M) + FEES' : 'THÁNG (>3TH) + PHÍ')}
               </span>
               <span className="text-xs sm:text-sm font-bold text-indigo-600 mb-1 whitespace-nowrap">
                 {formatPrice(room.pricing.monthlyOver3)} {room.pricing.monthlyOver3 && room.pricing.monthlyOver3 > 0 ? 'VND' : ''}
               </span>
               {room.pricing.fees && (
-                <p className="text-[10px] text-slate-400 whitespace-pre-line leading-normal font-medium">
+                <p className="text-[10px] text-slate-500 whitespace-pre-line leading-tight font-medium">
                   {room.pricing.fees}
                 </p>
               )}

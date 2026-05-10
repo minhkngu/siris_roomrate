@@ -135,7 +135,7 @@ export default function App() {
           </div>
         </nav>
 
-        <main className="max-w-5xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <main className="max-w-5xl mx-auto">
           <Suspense fallback={<div className="h-40 animate-pulse bg-white rounded-[2rem]" />}>
             <GeneralPolicies policies={generalPolicies} t={t} contactEmail={contactEmail} contactPhone={contactPhone} lang={lang} />
           </Suspense>
@@ -183,7 +183,7 @@ export default function App() {
         {!loading && properties.length > 0 && (
           <>
             {/* Header Section */}
-            <div className="mb-6 sm:mb-10">
+            <div className="mb-6 sm:mb-10 min-h-[100px] sm:min-h-[120px] flex flex-col justify-center">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-3 sm:mb-4 text-slate-900 leading-tight">
                 {heroTitleElements}
               </h1>

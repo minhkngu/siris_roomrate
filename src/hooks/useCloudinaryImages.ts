@@ -7,7 +7,7 @@ export interface CloudinaryImage {
   srcSet: string;
 }
 
-export const useCloudinaryImages = (tag: string | undefined) => {
+export const useCloudinaryImages = (tag: string | undefined, priority: boolean = false) => {
   const [images, setImages] = useState<CloudinaryImage[]>([]);
   const [loading, setLoading] = useState(false);
   const preloadLinkRef = useRef<HTMLLinkElement | null>(null);
@@ -69,14 +69,14 @@ export const useCloudinaryImages = (tag: string | undefined) => {
                 `${transBase},w_300/${verPath} 300w`,
                 `${transBase},w_450/${verPath} 450w`,
                 `${transBase},w_600/${verPath} 600w`,
-                `${transBase},w_900/${verPath} 900w`,
+                `${transBase},w_800/${verPath} 800w`,
+                `${transBase},w_1000/${verPath} 1000w`,
               ].join(', '),
             };
           });
 
-          // Inject preload link for the first image immediately
-          // (before React re-renders — the browser starts fetching right away)
-          if (urls.length > 0) {
+          // Inject preload link for the first image immediately ONLY if priority is true
+          if (priority && urls.length > 0) {
             setPreloadLink(urls[0].src, urls[0].srcSet);
           }
 
