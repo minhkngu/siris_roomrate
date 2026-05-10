@@ -23,13 +23,14 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
   const cloudinaryTag = branchTag && room.tag ? `${branchTag}_${room.tag}` : undefined;
   const { images, loading } = useCloudinaryImages(cloudinaryTag);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [translateX, setTranslateX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const [showNudge, setShowNudge] = useState(true);
   const preloadedRef = useRef<Set<number>>(new Set());
   const imageRef = useRef<HTMLDivElement>(null);
 
   // Touch swipe state
   const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
   const isSwiping = useRef(false);
 
   const totalImages = images.length;
@@ -83,6 +84,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
   }, [totalImages, currentImageIndex]);
 
   const goToImage = useCallback((newIndex: number) => {
+    setTranslateX(0);
     setCurrentImageIndex(newIndex);
   }, []);
 
@@ -98,34 +100,41 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
     goToImage(newIndex);
   }, [currentImageIndex, totalImages, goToImage]);
 
-  // Touch handlers for swipe
+  // Touch handlers for swipe with follow effect
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     isSwiping.current = true;
+    setIsDragging(true);
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isSwiping.current) return;
-    touchEndX.current = e.touches[0].clientX;
+    const currentX = e.touches[0].clientX;
+    const diff = currentX - touchStartX.current;
+    setTranslateX(diff);
   }, []);
 
   const handleTouchEnd = useCallback(() => {
     if (!isSwiping.current) return;
     isSwiping.current = false;
+    setIsDragging(false);
 
-    const swipeDistance = touchStartX.current - touchEndX.current;
+    const swipeDistance = translateX;
     const minSwipeDistance = 50;
 
-    if (Math.abs(swipeDistance) < minSwipeDistance) return;
+    if (Math.abs(swipeDistance) < minSwipeDistance) {
+      goToImage(currentImageIndex);
+      return;
+    }
 
-    if (swipeDistance > 0) {
+    if (swipeDistance < 0) {
       const newIndex = (currentImageIndex + 1) % totalImages;
       goToImage(newIndex);
     } else {
       const newIndex = (currentImageIndex - 1 + totalImages) % totalImages;
       goToImage(newIndex);
     }
-  }, [currentImageIndex, totalImages, goToImage]);
+  }, [currentImageIndex, totalImages, goToImage, translateX]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -165,26 +174,27 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag }) 
               key={`img-${currentImageIndex}`}
               src={images[currentImageIndex]}
               alt={room.name}
-              className={`w-full h-full object-cover transition-opacity duration-200 group-hover/carousel:scale-105 ${isImageReady ? 'opacity-100' : 'opacity-0'} ${showNudge && currentImageIndex === 0 ? 'animate-nudge-left' : ''}`}
+              style={isDragging ? { transform: `translateX(${translateX}px)`, transition: 'none' } : undefined}
+              className={`w-full h-full object-cover transition-all duration-300 group-hover/carousel:scale-105 ${isDragging ? '' : 'translate-x-0'} ${isImageReady ? 'opacity-100' : 'opacity-0'} ${showNudge && currentImageIndex === 0 ? 'animate-nudge-left' : ''}`}
               referrerPolicy="no-referrer"
               fetchPriority={currentImageIndex === 0 ? 'high' : 'auto'}
               decoding="async"
               draggable={false}
             />
 
-            {/* Navigation arrows */}
+            {/* Navigation arrows - always visible on mobile, on hover on desktop */}
             {hasMultipleImages && (
               <>
                 <button
                   onClick={prevImg}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-1 sm:p-1.5 rounded-full z-20 transition-all active:scale-90 shadow-sm opacity-0 group-hover/carousel:opacity-100 md:opacity-0 md:group-hover/carousel:opacity-100"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-1.5 sm:p-2 rounded-full z-20 transition-all active:scale-90 shadow-md backdrop-blur-sm md:opacity-0 md:group-hover/carousel:opacity-100"
                   aria-label="Previous image"
                 >
                   <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
                 </button>
                 <button
                   onClick={nextImg}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-1 sm:p-1.5 rounded-full z-20 transition-all active:scale-90 shadow-sm opacity-0 group-hover/carousel:opacity-100 md:opacity-0 md:group-hover/carousel:opacity-100"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-1.5 sm:p-2 rounded-full z-20 transition-all active:scale-90 shadow-md backdrop-blur-sm md:opacity-0 md:group-hover/carousel:opacity-100"
                   aria-label="Next image"
                 >
                   <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
