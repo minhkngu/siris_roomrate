@@ -46,3 +46,43 @@
     display: none;
   }
 }
+
+@keyframes bounce-x {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(4px);
+  }
+}
+
+@utility animate-bounce-x {
+  animation: bounce-x 1s ease-in-out infinite;
+}
+
+@keyframes nudge-left {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-8px);
+  }
+
+  50% {
+    transform: translateX(0);
+  }
+
+  75% {
+    transform: translateX(-4px);
+  }
+}
+
+@utility animate-nudge-left {
+  animation: nudge-left 1s ease-in-out;
+}
