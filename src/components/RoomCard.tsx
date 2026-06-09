@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Waves, ChevronRight, ChevronLeft, Maximize, AlertTriangle } from 'lucide-react';
+import { Waves, ChevronRight, ChevronLeft, Maximize, AlertCircle } from 'lucide-react';
 import { RoomType } from '../types';
 import { Language } from '../translations';
 import { useCloudinaryImages } from '../hooks/useCloudinaryImages';
@@ -34,7 +34,16 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
     const el = e ? (e.currentTarget as HTMLElement) : warningBtnRef.current;
     if (!el) return { x: 0, y: 0 };
     const rect = el.getBoundingClientRect();
-    return { x: rect.left, y: rect.bottom + 8 };
+    const popupWidth = 300;
+    const estimatedHeight = 200;
+    let x = Math.min(rect.left, window.innerWidth - popupWidth - 12);
+    let y = rect.bottom + 8;
+    if (x < 12) x = 12;
+    if (y + estimatedHeight > window.innerHeight) {
+      y = rect.top - estimatedHeight - 8;
+      if (y < 12) y = 12;
+    }
+    return { x, y };
   };
   const preloadedRef = useRef<Set<number>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
@@ -160,6 +169,26 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
     };
   }, [showWarning]);
 
+  // Close popup when clicking outside
+  useEffect(() => {
+    if (!showWarning) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (warningBtnRef.current && !warningBtnRef.current.contains(e.target as Node)) {
+        setShowWarning(false);
+      }
+    };
+    // Defer adding listener to avoid the same click that opened the popup from closing it
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showWarning]);
+
   // We use the loading state from the hook to show the shimmer
   // The images will fade in naturally once loaded by the browser
 
@@ -275,20 +304,23 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
               <>
                 <button
                   ref={warningBtnRef}
-                  onMouseEnter={(e) => { setShowWarning(true); setWarningPos(getButtonPos(e)); }}
-                  onMouseLeave={() => setShowWarning(false)}
                   onClick={(e) => { setShowWarning(prev => !prev); setWarningPos(getButtonPos(e)); }}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-widest bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100 transition-all cursor-pointer shrink-0 animate-pulse shadow-[0_0_0_rgba(251,191,36,0)] hover:shadow-[0_0_8px_rgba(251,191,36,0.3)]"
+                  className="bg-orange-100 active:bg-orange-200 rounded-full pl-3 pr-2 py-1.5 flex items-center justify-center gap-2 active:scale-[0.96] transition-all shadow-sm cursor-pointer shrink-0"
                 >
-                  <AlertTriangle size={11} className="text-amber-500" strokeWidth={2.5} />
-                  {lang === 'en' ? 'NOTICE' : 'CHÚ Ý'}
+                  <AlertCircle size={14} className="w-3.5 h-3.5 text-orange-600 shrink-0" strokeWidth={2.5} />
+                  <span className="text-orange-600 font-bold text-[10px] leading-none tracking-wider uppercase whitespace-nowrap">{lang === 'en' ? 'NOTICE' : 'CHÚ Ý'}</span>
+                  <div className="bg-orange-200/60 rounded-full p-0.5 shrink-0">
+                    <ChevronRight size={10} className="w-2.5 h-2.5 text-orange-700" strokeWidth={2.5} />
+                  </div>
                 </button>
                 {showWarning && warningPos && createPortal(
                   <div
-                    className="fixed z-[9999] max-w-[300px] bg-white border border-amber-200 rounded-xl shadow-lg p-3.5 text-sm text-slate-700 leading-relaxed"
-                    style={{ left: warningPos.x, top: warningPos.y }}
-                    onMouseEnter={() => setShowWarning(true)}
-                    onMouseLeave={() => setShowWarning(false)}
+                    className="fixed z-[9999] max-w-[300px] sm:max-w-sm bg-white border border-amber-200 rounded-xl shadow-lg p-3.5 text-sm text-slate-700 leading-relaxed"
+                    style={{
+                      left: `max(12px, min(${warningPos.x}px, calc(100vw - 312px)))`,
+                      top: warningPos.y > window.innerHeight - 220 ? 'auto' : `${warningPos.y}px`,
+                      bottom: warningPos.y > window.innerHeight - 220 ? '12px' : 'auto',
+                    }}
                   >
                     <p className="text-slate-600 whitespace-pre-wrap">{room.warning}</p>
                   </div>,
