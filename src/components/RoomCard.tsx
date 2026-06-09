@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Waves, ChevronRight, ChevronLeft, Maximize } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Waves, ChevronRight, ChevronLeft, Maximize, AlertTriangle } from 'lucide-react';
 import { RoomType } from '../types';
 import { Language } from '../translations';
 import { useCloudinaryImages } from '../hooks/useCloudinaryImages';
@@ -26,6 +27,15 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSliding, setIsSliding] = useState(false);
   const [showNudge, setShowNudge] = useState(true);
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningPos, setWarningPos] = useState<{ x: number; y: number } | null>(null);
+  const warningBtnRef = useRef<HTMLButtonElement>(null);
+  const getButtonPos = (e?: React.MouseEvent | React.TouchEvent) => {
+    const el = e ? (e.currentTarget as HTMLElement) : warningBtnRef.current;
+    if (!el) return { x: 0, y: 0 };
+    const rect = el.getBoundingClientRect();
+    return { x: rect.left, y: rect.bottom + 8 };
+  };
   const preloadedRef = useRef<Set<number>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -138,6 +148,18 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentIndex, total, hasMultiple, slideTo]);
 
+  // Track scroll to keep popup positioned correctly
+  useEffect(() => {
+    if (!showWarning) return;
+    const handleViewChange = () => setWarningPos(getButtonPos());
+    window.addEventListener('scroll', handleViewChange, true);
+    window.addEventListener('resize', handleViewChange);
+    return () => {
+      window.removeEventListener('scroll', handleViewChange, true);
+      window.removeEventListener('resize', handleViewChange);
+    };
+  }, [showWarning]);
+
   // We use the loading state from the hook to show the shimmer
   // The images will fade in naturally once loaded by the browser
 
@@ -249,6 +271,31 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
             <h3 className="text-base sm:text-lg font-bold text-slate-800 truncate" title={room.name}>
               {room.name}
             </h3>
+            {room.warning && (
+              <>
+                <button
+                  ref={warningBtnRef}
+                  onMouseEnter={(e) => { setShowWarning(true); setWarningPos(getButtonPos(e)); }}
+                  onMouseLeave={() => setShowWarning(false)}
+                  onClick={(e) => { setShowWarning(prev => !prev); setWarningPos(getButtonPos(e)); }}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-widest bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100 transition-all cursor-pointer shrink-0 animate-pulse shadow-[0_0_0_rgba(251,191,36,0)] hover:shadow-[0_0_8px_rgba(251,191,36,0.3)]"
+                >
+                  <AlertTriangle size={11} className="text-amber-500" strokeWidth={2.5} />
+                  {lang === 'en' ? 'NOTICE' : 'CHÚ Ý'}
+                </button>
+                {showWarning && warningPos && createPortal(
+                  <div
+                    className="fixed z-[9999] max-w-[300px] bg-white border border-amber-200 rounded-xl shadow-lg p-3.5 text-sm text-slate-700 leading-relaxed"
+                    style={{ left: warningPos.x, top: warningPos.y }}
+                    onMouseEnter={() => setShowWarning(true)}
+                    onMouseLeave={() => setShowWarning(false)}
+                  >
+                    <p className="text-slate-600 whitespace-pre-wrap">{room.warning}</p>
+                  </div>,
+                  document.body
+                )}
+              </>
+            )}
           </div>
         </div>
 

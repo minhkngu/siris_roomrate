@@ -38,6 +38,7 @@ export interface RoomType {
   pricing: Pricing;
   tag?: string;
   isHidden?: boolean;
+  warning?: string;
 }
 
 export interface Property {

@@ -104,6 +104,9 @@ npm run lint
 5. **Fix bug:** `t.lang` trong `GeneralPolicies` → thay bằng prop `lang` chính xác.
 6. **Footer responsive:** Layout riêng cho mobile (xếp dọc, căn giữa) và desktop (2 cột brand + contact), link "Chính sách chung" chỉ hiện trên mobile.
 7. **CSS nhất quán:** Dùng utility `scrollbar-hide` từ `index.css` thay vì inline style.
+8. **Gộp filter bar & facility card:** Thanh tab chọn cơ sở được gộp vào chung một card với thông tin cơ sở, loại bỏ sticky bar riêng lẻ. UI liền mạch hơn trên mọi kích thước màn hình.
+9. **Cảnh báo phòng (Warning):** Thêm field `warning` trong `RoomType`. Nếu phòng có dữ liệu ở cột `warning` (Supabase table `room_types`), badge **"⚠️ CHÚ Ý"** nhấp nháy sẽ xuất hiện kế bên tên phòng. Hover/click vào badge để xem popup nội dung cảnh báo (dùng React Portal, không bị clipping). Hỗ trợ đa ngôn ngữ qua cột `warning_en`.
+10. **Đổi ngôn ngữ không load lại:** Dùng `useRef` để chỉ hiển thị loading skeleton ở lần đầu tiên. Khi đổi ngôn ngữ, dữ liệu được lấy từ cache, không giật/lag.
 
 ---
 

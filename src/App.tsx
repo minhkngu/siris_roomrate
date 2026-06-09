@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { MapPin, Search } from 'lucide-react';
 import { Property, Policy, DateAdjustment } from './types';
 import { fetchProperties } from './services/dataService';
@@ -26,22 +26,29 @@ export default function App() {
   );
   const t = translations[lang];
 
+  const isFirstLoad = useRef(true);
+
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
+      if (isFirstLoad.current) {
+        setLoading(true);
+      }
       try {
         const { properties, generalPolicies, dateAdjustments, settings } = await fetchProperties(lang);
         setProperties(properties);
         setGeneralPolicies(generalPolicies);
         setDateAdjustments(dateAdjustments);
         setSettings(settings || []);
-        if (properties.length > 0) {
+        if (isFirstLoad.current && properties.length > 0) {
           setActiveFacility(properties[0].id);
         }
       } catch (error) {
         console.error('Failed to load properties:', error);
       } finally {
-        setLoading(false);
+        if (isFirstLoad.current) {
+          setLoading(false);
+          isFirstLoad.current = false;
+        }
       }
     };
     loadData();

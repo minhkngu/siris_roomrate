@@ -220,7 +220,8 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<{
             fees: getTranslatedValue(room, 'fees', lang, lang === 'en' ? 'Electricity 4k, Water 100k/person' : 'Điện 4k, Nước 100k/ng')
           },
           tag: room.tag || '',
-          isHidden: !!(room.is_hidden ?? room.isHidden ?? room.ishidden ?? false)
+          isHidden: !!(room.is_hidden ?? room.isHidden ?? room.ishidden ?? false),
+          warning: getTranslatedValue(room, 'warning', lang) || undefined
         };
       })
       .sort((a, b) => a.pricing.weekday - b.pricing.weekday);
