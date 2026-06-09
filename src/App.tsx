@@ -192,42 +192,29 @@ export default function App() {
               </p>
             </div>
 
-            {/* Filter Bar - Modern Underlined Tabs */}
-            <div className="sticky top-16 z-40 bg-white/90 backdrop-blur-xl pt-2 mb-6 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-slate-200/80 shadow-sm">
-              <div className="flex gap-8 overflow-x-auto w-full scrollbar-hide px-2">
-                <button
-                  onClick={() => setActiveFacility('all')}
-                  className={`pb-3 whitespace-nowrap text-sm font-bold transition-all relative ${activeFacility === 'all'
-                    ? 'text-indigo-600'
-                    : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                >
-                  {t.allFacilities}
-                  {activeFacility === 'all' && (
-                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full shadow-[0_-2px_8px_rgba(79,70,229,0.5)]"></span>
-                  )}
-                </button>
+            {/* Unified Facility Card - Tabs + Info */}
+            <div className="bg-indigo-50 border border-indigo-100 rounded-[2rem] mb-10 overflow-hidden">
+              {/* Tab Header */}
+              <div className="flex gap-6 overflow-x-auto w-full scrollbar-hide px-6 py-3 border-b border-indigo-100/50 bg-indigo-100/30">
                 {properties.map(fac => (
                   <button
                     key={fac.id}
                     onClick={() => setActiveFacility(fac.id)}
-                    className={`pb-3 whitespace-nowrap text-sm font-bold transition-all relative ${activeFacility === fac.id
-                      ? 'text-indigo-600'
-                      : 'text-slate-500 hover:text-slate-800'
+                    className={`whitespace-nowrap text-sm font-bold transition-all relative pb-1 ${activeFacility === fac.id
+                      ? 'text-indigo-700'
+                      : 'text-slate-500 hover:text-slate-700'
                       }`}
                   >
                     {fac.name}
                     {activeFacility === fac.id && (
-                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full shadow-[0_-2px_8px_rgba(79,70,229,0.5)]"></span>
+                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
                     )}
                   </button>
                 ))}
               </div>
-            </div>
 
-            {/* Facility Info */}
-            {selectedProperty && (
-              <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-[2rem] mb-10 flex flex-col md:flex-row justify-between items-start gap-6">
+              {/* Card Body */}
+              <div className="p-6 flex flex-col md:flex-row justify-between items-start gap-6">
                 <div className="flex-1 w-full">
                   <div className="flex items-center gap-2 text-indigo-700 font-bold mb-1">
                     <MapPin size={18} />
@@ -256,7 +243,7 @@ export default function App() {
                   </div>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Room Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
