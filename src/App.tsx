@@ -180,15 +180,40 @@ export default function App() {
         </div>
       </nav>
 
-      {dateAdjustments.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-          <SurchargeBanner adjustments={dateAdjustments} lang={lang} t={t} />
-        </div>
+      {!loading && properties.length > 0 && (
+        <nav className="sticky top-16 z-40 bg-white/75 backdrop-blur-md border-b border-slate-200/80 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.08)] transition-all">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <ul className="flex space-x-2 md:space-x-4 overflow-x-auto w-full scrollbar-hide pt-2">
+              {properties.map(fac => (
+                <li key={fac.id}>
+                  <button
+                    onClick={() => setActiveFacility(fac.id)}
+                    className={`py-3 md:py-4 px-4 font-semibold text-sm md:text-base relative transition-all duration-300 rounded-t-xl whitespace-nowrap ${activeFacility === fac.id
+                      ? 'text-indigo-600 bg-indigo-50/50'
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                      }`}
+                  >
+                    {fac.name}
+                    {activeFacility === fac.id && (
+                      <span className="absolute bottom-0 left-0 w-full h-[3px] bg-indigo-600 rounded-t-full shadow-[0_-2px_8px_rgba(79,70,229,0.25)]"></span>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </nav>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-4">
         {!loading && properties.length > 0 && (
           <>
+            {dateAdjustments.length > 0 && (
+              <div className="mb-4 sm:mb-6">
+                <SurchargeBanner adjustments={dateAdjustments} lang={lang} t={t} />
+              </div>
+            )}
+
             {/* Header Section */}
             <div className="mb-4 sm:mb-6 min-h-[60px] sm:min-h-[80px] flex flex-col justify-center">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-1 sm:mb-2 text-slate-900 leading-tight">
@@ -199,27 +224,8 @@ export default function App() {
               </p>
             </div>
 
-            {/* Unified Facility Card - Tabs + Info */}
+            {/* Unified Facility Card - Info */}
             <div className="bg-indigo-50 border border-indigo-100 rounded-[2rem] mb-10 overflow-hidden">
-              {/* Tab Header */}
-              <div className="flex gap-6 overflow-x-auto w-full scrollbar-hide px-6 py-3 border-b border-indigo-100/50 bg-indigo-100/30">
-                {properties.map(fac => (
-                  <button
-                    key={fac.id}
-                    onClick={() => setActiveFacility(fac.id)}
-                    className={`whitespace-nowrap text-sm font-bold transition-all relative pb-1 ${activeFacility === fac.id
-                      ? 'text-indigo-700'
-                      : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                  >
-                    {fac.name}
-                    {activeFacility === fac.id && (
-                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
-                    )}
-                  </button>
-                ))}
-              </div>
-
               {/* Card Body */}
               <div className="p-6 flex flex-col md:flex-row justify-between items-start gap-6">
                 <div className="flex-1 w-full">
