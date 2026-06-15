@@ -12,7 +12,10 @@ import { Footer } from './components/Footer';
 const GeneralPolicies = lazy(() => import('./components/GeneralPolicies').then(m => ({ default: m.GeneralPolicies })));
 
 export default function App() {
-  const [lang, setLang] = useState<Language>('vi');
+  const [lang, setLang] = useState<Language>(() => {
+    const saved = localStorage.getItem('siris_lang') as Language | null;
+    return saved === 'en' || saved === 'vi' ? saved : 'vi';
+  });
   const [properties, setProperties] = useState<Property[]>([]);
   const [generalPolicies, setGeneralPolicies] = useState<Policy[]>([]);
   const [dateAdjustments, setDateAdjustments] = useState<DateAdjustment[]>([]);
@@ -27,6 +30,10 @@ export default function App() {
   const t = translations[lang];
 
   const isFirstLoad = useRef(true);
+
+  useEffect(() => {
+    localStorage.setItem('siris_lang', lang);
+  }, [lang]);
 
   useEffect(() => {
     const loadData = async () => {
