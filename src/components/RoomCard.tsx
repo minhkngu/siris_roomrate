@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Waves, ChevronRight, ChevronLeft, Maximize, AlertCircle } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Maximize, AlertCircle } from 'lucide-react';
 import { RoomType } from '../types';
 import { Language } from '../translations';
 import { useCloudinaryImages } from '../hooks/useCloudinaryImages';
@@ -55,46 +55,25 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
   const total = images.length;
   const hasMultiple = total > 1;
 
-  // Preload first image immediately
-  useEffect(() => {
-    if (images.length > 0 && !preloadedRef.current.has(0)) {
-      preloadedRef.current.add(0);
-      const img = new Image();
-      img.src = images[0].src;
-      img.srcset = images[0].srcSet;
-    }
-  }, [images]);
-
-  // Preload adjacent
+  // Preload images: first, adjacent, then rest in background
   useEffect(() => {
     if (total === 0) return;
-    const preload = (idx: number) => {
-      if (preloadedRef.current.has(idx)) return;
-      preloadedRef.current.add(idx);
-      const img = new Image();
-      img.src = images[idx].src;
-      img.srcset = images[idx].srcSet;
-    };
-    preload(currentIndex);
-    preload((currentIndex + 1) % total);
-    preload((currentIndex - 1 + total) % total);
-  }, [images, currentIndex, total]);
-
-  // Preload rest in background
-  useEffect(() => {
-    if (total <= 2 || preloadedRef.current.size >= total) return;
-    const timer = setTimeout(() => {
-      for (let i = 0; i < total; i++) {
-        if (!preloadedRef.current.has(i)) {
-          preloadedRef.current.add(i);
-          const img = new Image();
-          img.src = images[i].src;
-          img.srcset = images[i].srcSet;
-        }
+    const pl = (idx: number) => {
+      if (!preloadedRef.current.has(idx)) {
+        preloadedRef.current.add(idx);
+        const img = new Image();
+        img.src = images[idx].src;
+        img.srcset = images[idx].srcSet;
       }
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [total, images]);
+    };
+    pl(0);
+    pl((currentIndex + 1) % total);
+    pl((currentIndex - 1 + total) % total);
+    if (total > 2 && preloadedRef.current.size < total) {
+      const timer = setTimeout(() => { for (let i = 0; i < total; i++) pl(i); }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [images, currentIndex, total]);
 
   // Auto-dismiss nudge
   useEffect(() => {
@@ -132,9 +111,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
     isSwiping.current = true;
   }, []);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isSwiping.current) return;
-  }, []);
+  const handleTouchMove = useCallback(() => { }, []);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (!isSwiping.current) return;
@@ -157,40 +134,29 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentIndex, total, hasMultiple, slideTo]);
 
-  // Track scroll to keep popup positioned correctly
+  // Popup positioning + click outside
   useEffect(() => {
     if (!showWarning) return;
     const handleViewChange = () => setWarningPos(getButtonPos());
-    window.addEventListener('scroll', handleViewChange, true);
-    window.addEventListener('resize', handleViewChange);
-    return () => {
-      window.removeEventListener('scroll', handleViewChange, true);
-      window.removeEventListener('resize', handleViewChange);
-    };
-  }, [showWarning]);
-
-  // Close popup when clicking outside
-  useEffect(() => {
-    if (!showWarning) return;
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (warningBtnRef.current && !warningBtnRef.current.contains(e.target as Node)) {
         setShowWarning(false);
       }
     };
-    // Defer adding listener to avoid the same click that opened the popup from closing it
+    window.addEventListener('scroll', handleViewChange, true);
+    window.addEventListener('resize', handleViewChange);
     const timer = setTimeout(() => {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('touchstart', handleClickOutside);
     }, 0);
     return () => {
       clearTimeout(timer);
+      window.removeEventListener('scroll', handleViewChange, true);
+      window.removeEventListener('resize', handleViewChange);
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [showWarning]);
-
-  // We use the loading state from the hook to show the shimmer
-  // The images will fade in naturally once loaded by the browser
 
   return (
     <div className="bg-white rounded-[2rem] overflow-hidden border-2 border-gray-200/80 shadow-md hover:border-indigo-300 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all group h-full flex flex-col">
@@ -271,7 +237,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
           </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-slate-300">
-            <Waves size={40} strokeWidth={1} />
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" /><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" /><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" /></svg>
           </div>
         )}
 

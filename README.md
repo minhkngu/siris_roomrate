@@ -10,11 +10,12 @@
 - **Thanh lọc cơ sở** — Sticky filter bar với underlined tabs, hỗ trợ cuộc ngang trên mobile.
 - **Bảng giá đa dạng** — Hiển thị giá ngày thường, cuối tuần, tháng ngắn/dài hạn.
 - **Carousel ảnh** — Điều hướng nhiều ảnh trên cả mobile & desktop, preload ảnh thông minh.
-- **Chính sách chung** — Trang riêng với lazy loading, trình bày dạng bài viết.
+- **Chính sách chung** — Trang riêng với loading skeleton, hiển thị dạng bài viết có số thứ tự.
 - **Phụ thu/thông báo** — Banner thông minh hiển thị surcharge theo tháng.
-- **Đa ngôn ngữ** — Hỗ trợ Tiếng Việt & Tiếng Anh.
+- **Đa ngôn ngữ** — Hỗ trợ Tiếng Việt & Tiếng Anh, lưu lựa chọn vào localStorage.
 - **Responsive 100%** — Tối ưu cho mọi thiết bị.
-- **Tối ưu hiệu năng** — Cache dữ liệu Supabase, preload ảnh Cloudinary, dùng `useMemo` giảm re-render.
+- **Cảnh báo phòng (Warning)** — Badge "CHÚ Ý" kế bên tên phòng, popup dùng React Portal.
+- **Tối ưu hiệu năng** — Cache dữ liệu Supabase, chunk splitting (React/Vendor/Supabase/Lucide riêng), CSS animation thay vì JS state, inline SVG giảm bundle size.
 
 ---
 
@@ -107,6 +108,16 @@ npm run lint
 8. **Gộp filter bar & facility card:** Thanh tab chọn cơ sở được gộp vào chung một card với thông tin cơ sở, loại bỏ sticky bar riêng lẻ. UI liền mạch hơn trên mọi kích thước màn hình.
 9. **Cảnh báo phòng (Warning):** Thêm field `warning` trong `RoomType`. Nếu phòng có dữ liệu ở cột `warning` (Supabase table `room_types`), badge **"⚠️ CHÚ Ý"** nhấp nháy sẽ xuất hiện kế bên tên phòng. Hover/click vào badge để xem popup nội dung cảnh báo (dùng React Portal, không bị clipping). Hỗ trợ đa ngôn ngữ qua cột `warning_en`.
 10. **Đổi ngôn ngữ không load lại:** Dùng `useRef` để chỉ hiển thị loading skeleton ở lần đầu tiên. Khi đổi ngôn ngữ, dữ liệu được lấy từ cache, không giật/lag.
+11. **Persist ngôn ngữ:** Lưu lựa chọn ngôn ngữ vào `localStorage`, khôi phục khi refresh trang.
+12. **Animation mượt khi refresh:** Loading skeleton cho cả trang chủ và trang chính sách, fade-in animation với `@keyframes fadeIn` CSS.
+13. **Fix footer hiển thị sai khi loading:** Footer có `loading` prop, khi đang tải dữ liệu sẽ hiển thị skeleton thay vì contact info mặc định.
+14. **Import trực tiếp GeneralPolicies:** Bỏ `React.lazy()` để tránh blank page khi refresh trang `?view=policies`.
+15. **Tách chunk (code splitting):** Cấu hình Vite `manualChunks` tách `react-vendor`, `lucide`, `supabase` thành các file riêng — tận dụng cache trình duyệt, giảm dung lượng tải lại.
+16. **Inline SVG:** Thay thế icon `Waves` từ lucide-react bằng inline SVG để giảm kích thước bundle.
+17. **Tối ưu HTML:** Thêm `preconnect` + `crossorigin` cho Cloudinary và Supabase trong `<head>` để tăng tốc DNS và TLS handshake.
+18. **Gộp useEffect:** Hợp nhất 3 effect preload ảnh trong RoomCard thành 1 effect duy nhất; hợp nhất 2 effect popup warning thành 1.
+19. **Xóa React import dư:** App.tsx không còn import `React` (JSX tự động trong React 17+).
+20. **Thêm cancelled flag:** Tránh setState sau khi component unmount khi đổi ngôn ngữ.
 
 ---
 

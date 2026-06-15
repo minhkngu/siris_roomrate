@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { MapPin, Search } from 'lucide-react';
 import { Property, Policy, DateAdjustment } from './types';
 import { fetchProperties } from './services/dataService';
@@ -20,7 +20,6 @@ export default function App() {
   const [dateAdjustments, setDateAdjustments] = useState<DateAdjustment[]>([]);
   const [settings, setSettings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [contentReady, setContentReady] = useState(false);
 
   const [activeFacility, setActiveFacility] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,42 +28,32 @@ export default function App() {
   );
   const t = translations[lang];
 
-  const isFirstLoad = useRef(true);
-
   useEffect(() => {
     localStorage.setItem('siris_lang', lang);
   }, [lang]);
 
   useEffect(() => {
+    let cancelled = false;
     const loadData = async () => {
-      if (isFirstLoad.current) {
-        setLoading(true);
-      }
+      setLoading(true);
       try {
-        const { properties, generalPolicies, dateAdjustments, settings } = await fetchProperties(lang);
-        setProperties(properties);
-        setGeneralPolicies(generalPolicies);
-        setDateAdjustments(dateAdjustments);
-        setSettings(settings || []);
-        if (isFirstLoad.current && properties.length > 0) {
-          setActiveFacility(properties[0].id);
+        const data = await fetchProperties(lang);
+        if (cancelled) return;
+        setProperties(data.properties);
+        setGeneralPolicies(data.generalPolicies);
+        setDateAdjustments(data.dateAdjustments);
+        setSettings(data.settings || []);
+        if (data.properties.length > 0) {
+          setActiveFacility(data.properties[0].id);
         }
       } catch (error) {
         console.error('Failed to load properties:', error);
       } finally {
-        if (isFirstLoad.current) {
-          setLoading(false);
-          isFirstLoad.current = false;
-          // Small delay to trigger fade-in after loading state is removed
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              setContentReady(true);
-            });
-          });
-        }
+        if (!cancelled) setLoading(false);
       }
     };
     loadData();
+    return () => { cancelled = true; };
   }, [lang]);
 
   useEffect(() => {
@@ -84,53 +73,46 @@ export default function App() {
   };
 
   const filteredRooms = useMemo(() => {
+    if (properties.length === 0) return [];
     return properties.flatMap(prop => {
       if (activeFacility && activeFacility !== 'all' && prop.id !== activeFacility) return [];
-
+      const searchLower = searchQuery.toLowerCase();
       return prop.rooms
         .filter(room => !room.isHidden)
-        .filter(room => {
-          const searchLower = searchQuery.toLowerCase();
-          return room.name.toLowerCase().includes(searchLower) ||
-            (room.tag && room.tag.toLowerCase().includes(searchLower));
-        })
-        .map(room => ({
-          ...room,
-          property: prop
-        }));
+        .filter(room =>
+          !searchLower ||
+          room.name.toLowerCase().includes(searchLower) ||
+          (room.tag && room.tag.toLowerCase().includes(searchLower))
+        )
+        .map(room => ({ ...room, property: prop }));
     });
   }, [properties, activeFacility, searchQuery]);
 
-  const selectedProperty = useMemo(() => properties.find(p => p.id === activeFacility), [properties, activeFacility]);
+  const selectedProperty = useMemo(
+    () => properties.find(p => p.id === activeFacility),
+    [properties, activeFacility]
+  );
 
-  const getSettingValue = useMemo(() => {
-    return (setting: any, fallback: string = '') => {
+  const { contactEmail, contactPhone, heroTitle, heroSubtitle } = useMemo(() => {
+    const getVal = (setting: any, fallback: string = '') => {
       if (!setting) return fallback;
       const val = (lang === 'en' && setting.value_en) ? setting.value_en : setting.value;
       return typeof val === 'string' ? val : (val?.value || val || fallback);
     };
-  }, [lang]);
-
-  const { contactEmail, contactPhone, heroTitle, heroSubtitle } = useMemo(() => {
-    const emailSetting = settings.find(s => s.key === 'email' || s.key === 'contact_email' || s.name === 'email');
-    const phoneSetting = settings.find(s => s.key === 'phone' || s.key === 'contact_phone' || s.name === 'phone');
-    const titleSetting = settings.find(s => s.key === 'hero_title' || s.name === 'hero_title');
-    const subtitleSetting = settings.find(s => s.key === 'hero_subtitle' || s.name === 'hero_subtitle');
-
     return {
-      contactEmail: getSettingValue(emailSetting, 'siris.residences@gmail.com'),
-      contactPhone: getSettingValue(phoneSetting, ''),
-      heroTitle: getSettingValue(titleSetting, t.heroTitle),
-      heroSubtitle: getSettingValue(subtitleSetting, t.heroSubtitle)
+      contactEmail: getVal(settings.find(s => s.key === 'email' || s.key === 'contact_email' || s.name === 'email'), 'siris.residences@gmail.com'),
+      contactPhone: getVal(settings.find(s => s.key === 'phone' || s.key === 'contact_phone' || s.name === 'phone'), ''),
+      heroTitle: getVal(settings.find(s => s.key === 'hero_title' || s.name === 'hero_title'), t.heroTitle),
+      heroSubtitle: getVal(settings.find(s => s.key === 'hero_subtitle' || s.name === 'hero_subtitle'), t.heroSubtitle)
     };
-  }, [settings, getSettingValue, t]);
+  }, [settings, lang, t]);
 
   const heroTitleElements = useMemo(() => {
-    return heroTitle.split(' ').map((word: string, i: number, arr: string[]) => {
-      if (i >= arr.length - 2) {
-        return <React.Fragment key={i}><span className="text-indigo-600 underline decoration-indigo-200 underline-offset-4">{word}</span> </React.Fragment>;
-      }
-      return word + ' ';
+    return heroTitle.split(' ').map((word, i, arr) => {
+      const isLastTwo = i >= arr.length - 2;
+      return isLastTwo
+        ? <span key={i} className="text-indigo-600 underline decoration-indigo-200 underline-offset-4">{word} </span>
+        : word + ' ';
     });
   }, [heroTitle]);
 
@@ -154,7 +136,6 @@ export default function App() {
             </div>
           </div>
         </nav>
-
         <main className="max-w-5xl mx-auto">
           {loading ? (
             <div className="px-6 sm:px-10 md:px-16 py-8 sm:py-12 md:py-16 animate-pulse">
@@ -176,15 +157,13 @@ export default function App() {
             <GeneralPolicies policies={generalPolicies} t={t} contactEmail={contactEmail} contactPhone={contactPhone} lang={lang} />
           )}
         </main>
-
-        <Footer t={t} contactEmail={contactEmail} contactPhone={contactPhone} showPoliciesLink={false} onNavigate={navigateTo} />
+        <Footer t={t} contactEmail={contactEmail} contactPhone={contactPhone} showPoliciesLink={false} onNavigate={navigateTo} loading={loading} />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 text-slate-900 font-sans">
-      {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-slate-900 border-b border-slate-800 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
@@ -235,119 +214,110 @@ export default function App() {
       )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-4">
-        <div className={`transition-all duration-500 ease-out ${loading ? 'opacity-0' : contentReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          {!loading && properties.length > 0 && (
-            <>
-              {dateAdjustments.length > 0 && (
-                <div className="mb-4 sm:mb-6">
-                  <SurchargeBanner adjustments={dateAdjustments} lang={lang} t={t} />
-                </div>
-              )}
-
-              {/* Header Section */}
-              <div className="mb-4 sm:mb-6 min-h-[60px] sm:min-h-[80px] flex flex-col justify-center">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-1 sm:mb-2 text-slate-900 leading-tight">
-                  {heroTitleElements}
-                </h1>
-                <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                  {heroSubtitle}
-                </p>
+        {!loading && properties.length > 0 && (
+          <div className="animate-fadeIn">
+            {dateAdjustments.length > 0 && (
+              <div className="mb-4 sm:mb-6">
+                <SurchargeBanner adjustments={dateAdjustments} lang={lang} t={t} />
               </div>
+            )}
 
-              {/* Unified Facility Card - Info */}
-              <div className="bg-indigo-50 border border-indigo-100 rounded-[2rem] mb-10 overflow-hidden">
-                {/* Card Body */}
-                <div className="p-6 flex flex-col md:flex-row justify-between items-start gap-6">
-                  <div className="flex-1 w-full">
-                    <div className="flex items-center gap-2 text-indigo-700 font-bold mb-1">
-                      <MapPin size={18} />
-                      <span className="text-lg">{selectedProperty.name}</span>
-                    </div>
-                    <p className="text-indigo-600/80 text-sm mb-6">
-                      {selectedProperty.address}
-                    </p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-bold text-slate-800 mb-3 text-xs uppercase tracking-widest">{t.propertyAmenities}</h4>
-                        <AmenityList included={selectedProperty.amenities} excluded={selectedProperty.excludedAmenities} />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-slate-800 mb-3 text-xs uppercase tracking-widest">{t.leasePolicy}</h4>
-                        <div className="bg-white p-4 rounded-xl border border-indigo-100/50 shadow-sm space-y-2">
-                          {selectedProperty.policies.map((policy, idx) => (
-                            <div key={idx}>
-                              {policy.title && <strong className="text-xs text-slate-700 block">{policy.title}</strong>}
-                              <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{policy.content}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Room Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
-                {filteredRooms.map((room, idx) => (
-                  <RoomCard
-                    key={`${room.property.id}-${room.id}`}
-                    room={room}
-                    t={t}
-                    lang={lang}
-                    branchTag={room.property.tag || room.property.name}
-                    priority={idx < 3}
-                  />
-                ))}
-              </div>
-
-              {/* Empty State */}
-              {filteredRooms.length === 0 && (
-                <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200 mt-8">
-                  <div className="inline-flex p-4 rounded-full bg-slate-50 text-slate-400 mb-4">
-                    <Search size={32} />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-800">{t.notFoundTitle}</h3>
-                  <p className="text-slate-500 mt-2">{t.notFoundSub}</p>
-                  <button
-                    onClick={() => { setActiveFacility('all'); setSearchQuery(''); }}
-                    className="mt-6 text-indigo-600 font-bold hover:underline"
-                  >
-                    {t.resetFilters}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-
-          {!loading && properties.length === 0 && (
-            <div className="text-center py-32 bg-white rounded-[2rem] border border-dashed border-gray-200 shadow-sm">
-              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                <MapPin size={32} className="text-slate-400" />
-              </div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-2">{t.noProperties}</h2>
-              <p className="text-slate-500 max-w-xs mx-auto text-sm">{t.noPropertiesSub}</p>
+            <div className="mb-4 sm:mb-6 min-h-[60px] sm:min-h-[80px] flex flex-col justify-center">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-1 sm:mb-2 text-slate-900 leading-tight">
+                {heroTitleElements}
+              </h1>
+              <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+                {heroSubtitle}
+              </p>
             </div>
-          )}
 
-        </div>
+            <div className="bg-indigo-50 border border-indigo-100 rounded-[2rem] mb-10 overflow-hidden">
+              <div className="p-6 flex flex-col md:flex-row justify-between items-start gap-6">
+                <div className="flex-1 w-full">
+                  <div className="flex items-center gap-2 text-indigo-700 font-bold mb-1">
+                    <MapPin size={18} />
+                    <span className="text-lg">{selectedProperty?.name}</span>
+                  </div>
+                  <p className="text-indigo-600/80 text-sm mb-6">
+                    {selectedProperty?.address}
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-bold text-slate-800 mb-3 text-xs uppercase tracking-widest">{t.propertyAmenities}</h4>
+                      <AmenityList included={selectedProperty?.amenities} excluded={selectedProperty?.excludedAmenities} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-800 mb-3 text-xs uppercase tracking-widest">{t.leasePolicy}</h4>
+                      <div className="bg-white p-4 rounded-xl border border-indigo-100/50 shadow-sm space-y-2">
+                        {selectedProperty?.policies.map((policy, idx) => (
+                          <div key={idx}>
+                            {policy.title && <strong className="text-xs text-slate-700 block">{policy.title}</strong>}
+                            <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{policy.content}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+              {filteredRooms.map((room, idx) => (
+                <RoomCard
+                  key={`${room.property.id}-${room.id}`}
+                  room={room}
+                  t={t}
+                  lang={lang}
+                  branchTag={room.property.tag || room.property.name}
+                  priority={idx < 3}
+                />
+              ))}
+            </div>
+
+            {filteredRooms.length === 0 && (
+              <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200 mt-8">
+                <div className="inline-flex p-4 rounded-full bg-slate-50 text-slate-400 mb-4">
+                  <Search size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-800">{t.notFoundTitle}</h3>
+                <p className="text-slate-500 mt-2">{t.notFoundSub}</p>
+                <button
+                  onClick={() => { setActiveFacility('all'); setSearchQuery(''); }}
+                  className="mt-6 text-indigo-600 font-bold hover:underline"
+                >
+                  {t.resetFilters}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!loading && properties.length === 0 && (
+          <div className="text-center py-32 bg-white rounded-[2rem] border border-dashed border-gray-200 shadow-sm animate-fadeIn">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <MapPin size={32} className="text-slate-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">{t.noProperties}</h2>
+            <p className="text-slate-500 max-w-xs mx-auto text-sm">{t.noPropertiesSub}</p>
+          </div>
+        )}
 
         {loading && (
           <div className="flex flex-col gap-8 animate-pulse">
-            <div className="h-32 bg-gray-200 animate-pulse rounded-[2rem]" />
-            <div className="h-16 bg-gray-200 animate-pulse rounded-2xl" />
+            <div className="h-32 bg-gray-200 rounded-[2rem]" />
+            <div className="h-16 bg-gray-200 rounded-2xl" />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-96 bg-gray-200 animate-pulse rounded-[2rem]" />
+                <div key={i} className="h-96 bg-gray-200 rounded-[2rem]" />
               ))}
             </div>
           </div>
         )}
       </main>
 
-      <Footer t={t} contactEmail={contactEmail} contactPhone={contactPhone} onNavigate={navigateTo} />
-
+      <Footer t={t} contactEmail={contactEmail} contactPhone={contactPhone} onNavigate={navigateTo} loading={loading} />
     </div>
   );
 }
