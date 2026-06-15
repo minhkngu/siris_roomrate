@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapPin, Search } from 'lucide-react';
 import { Property, Policy, DateAdjustment } from './types';
 import { fetchProperties } from './services/dataService';
@@ -8,8 +8,7 @@ import { SurchargeBanner } from './components/SurchargeBanner';
 import { RoomCard } from './components/RoomCard';
 import { AmenityList } from './components/AmenityList';
 import { Footer } from './components/Footer';
-
-const GeneralPolicies = lazy(() => import('./components/GeneralPolicies').then(m => ({ default: m.GeneralPolicies })));
+import { GeneralPolicies } from './components/GeneralPolicies';
 
 export default function App() {
   const [lang, setLang] = useState<Language>(() => {
@@ -21,6 +20,7 @@ export default function App() {
   const [dateAdjustments, setDateAdjustments] = useState<DateAdjustment[]>([]);
   const [settings, setSettings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [contentReady, setContentReady] = useState(false);
 
   const [activeFacility, setActiveFacility] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,6 +55,12 @@ export default function App() {
         if (isFirstLoad.current) {
           setLoading(false);
           isFirstLoad.current = false;
+          // Small delay to trigger fade-in after loading state is removed
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              setContentReady(true);
+            });
+          });
         }
       }
     };
@@ -150,9 +156,25 @@ export default function App() {
         </nav>
 
         <main className="max-w-5xl mx-auto">
-          <Suspense fallback={<div className="h-40 animate-pulse bg-white rounded-[2rem]" />}>
+          {loading ? (
+            <div className="px-6 sm:px-10 md:px-16 py-8 sm:py-12 md:py-16 animate-pulse">
+              <div className="h-10 w-64 bg-gray-200 rounded-lg mx-auto mb-12" />
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="mb-10">
+                  <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
+                    <div className="w-1.5 h-6 sm:h-8 bg-gray-200 rounded-full shrink-0 mt-1" />
+                    <div className="h-7 w-48 bg-gray-200 rounded" />
+                  </div>
+                  <div className="space-y-2 pl-4 sm:pl-6 ml-[3px] sm:ml-[4px]">
+                    <div className="h-4 bg-gray-200 rounded w-full" />
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
             <GeneralPolicies policies={generalPolicies} t={t} contactEmail={contactEmail} contactPhone={contactPhone} lang={lang} />
-          </Suspense>
+          )}
         </main>
 
         <Footer t={t} contactEmail={contactEmail} contactPhone={contactPhone} showPoliciesLink={false} onNavigate={navigateTo} />
@@ -213,103 +235,106 @@ export default function App() {
       )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-4">
-        {!loading && properties.length > 0 && (
-          <>
-            {dateAdjustments.length > 0 && (
-              <div className="mb-4 sm:mb-6">
-                <SurchargeBanner adjustments={dateAdjustments} lang={lang} t={t} />
+        <div className={`transition-all duration-500 ease-out ${loading ? 'opacity-0' : contentReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          {!loading && properties.length > 0 && (
+            <>
+              {dateAdjustments.length > 0 && (
+                <div className="mb-4 sm:mb-6">
+                  <SurchargeBanner adjustments={dateAdjustments} lang={lang} t={t} />
+                </div>
+              )}
+
+              {/* Header Section */}
+              <div className="mb-4 sm:mb-6 min-h-[60px] sm:min-h-[80px] flex flex-col justify-center">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-1 sm:mb-2 text-slate-900 leading-tight">
+                  {heroTitleElements}
+                </h1>
+                <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+                  {heroSubtitle}
+                </p>
               </div>
-            )}
 
-            {/* Header Section */}
-            <div className="mb-4 sm:mb-6 min-h-[60px] sm:min-h-[80px] flex flex-col justify-center">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-1 sm:mb-2 text-slate-900 leading-tight">
-                {heroTitleElements}
-              </h1>
-              <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                {heroSubtitle}
-              </p>
-            </div>
-
-            {/* Unified Facility Card - Info */}
-            <div className="bg-indigo-50 border border-indigo-100 rounded-[2rem] mb-10 overflow-hidden">
-              {/* Card Body */}
-              <div className="p-6 flex flex-col md:flex-row justify-between items-start gap-6">
-                <div className="flex-1 w-full">
-                  <div className="flex items-center gap-2 text-indigo-700 font-bold mb-1">
-                    <MapPin size={18} />
-                    <span className="text-lg">{selectedProperty.name}</span>
-                  </div>
-                  <p className="text-indigo-600/80 text-sm mb-6">
-                    {selectedProperty.address}
-                  </p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="font-bold text-slate-800 mb-3 text-xs uppercase tracking-widest">{t.propertyAmenities}</h4>
-                      <AmenityList included={selectedProperty.amenities} excluded={selectedProperty.excludedAmenities} />
+              {/* Unified Facility Card - Info */}
+              <div className="bg-indigo-50 border border-indigo-100 rounded-[2rem] mb-10 overflow-hidden">
+                {/* Card Body */}
+                <div className="p-6 flex flex-col md:flex-row justify-between items-start gap-6">
+                  <div className="flex-1 w-full">
+                    <div className="flex items-center gap-2 text-indigo-700 font-bold mb-1">
+                      <MapPin size={18} />
+                      <span className="text-lg">{selectedProperty.name}</span>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-slate-800 mb-3 text-xs uppercase tracking-widest">{t.leasePolicy}</h4>
-                      <div className="bg-white p-4 rounded-xl border border-indigo-100/50 shadow-sm space-y-2">
-                        {selectedProperty.policies.map((policy, idx) => (
-                          <div key={idx}>
-                            {policy.title && <strong className="text-xs text-slate-700 block">{policy.title}</strong>}
-                            <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{policy.content}</p>
-                          </div>
-                        ))}
+                    <p className="text-indigo-600/80 text-sm mb-6">
+                      {selectedProperty.address}
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-bold text-slate-800 mb-3 text-xs uppercase tracking-widest">{t.propertyAmenities}</h4>
+                        <AmenityList included={selectedProperty.amenities} excluded={selectedProperty.excludedAmenities} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-800 mb-3 text-xs uppercase tracking-widest">{t.leasePolicy}</h4>
+                        <div className="bg-white p-4 rounded-xl border border-indigo-100/50 shadow-sm space-y-2">
+                          {selectedProperty.policies.map((policy, idx) => (
+                            <div key={idx}>
+                              {policy.title && <strong className="text-xs text-slate-700 block">{policy.title}</strong>}
+                              <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{policy.content}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Room Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
-              {filteredRooms.map((room, idx) => (
-                <RoomCard
-                  key={`${room.property.id}-${room.id}`}
-                  room={room}
-                  t={t}
-                  lang={lang}
-                  branchTag={room.property.tag || room.property.name}
-                  priority={idx < 3}
-                />
-              ))}
-            </div>
-
-            {/* Empty State */}
-            {filteredRooms.length === 0 && (
-              <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200 mt-8">
-                <div className="inline-flex p-4 rounded-full bg-slate-50 text-slate-400 mb-4">
-                  <Search size={32} />
-                </div>
-                <h3 className="text-xl font-bold text-slate-800">{t.notFoundTitle}</h3>
-                <p className="text-slate-500 mt-2">{t.notFoundSub}</p>
-                <button
-                  onClick={() => { setActiveFacility('all'); setSearchQuery(''); }}
-                  className="mt-6 text-indigo-600 font-bold hover:underline"
-                >
-                  {t.resetFilters}
-                </button>
+              {/* Room Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+                {filteredRooms.map((room, idx) => (
+                  <RoomCard
+                    key={`${room.property.id}-${room.id}`}
+                    room={room}
+                    t={t}
+                    lang={lang}
+                    branchTag={room.property.tag || room.property.name}
+                    priority={idx < 3}
+                  />
+                ))}
               </div>
-            )}
-          </>
-        )}
 
-        {!loading && properties.length === 0 && (
-          <div className="text-center py-32 bg-white rounded-[2rem] border border-dashed border-gray-200 shadow-sm">
-            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-              <MapPin size={32} className="text-slate-400" />
+              {/* Empty State */}
+              {filteredRooms.length === 0 && (
+                <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200 mt-8">
+                  <div className="inline-flex p-4 rounded-full bg-slate-50 text-slate-400 mb-4">
+                    <Search size={32} />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800">{t.notFoundTitle}</h3>
+                  <p className="text-slate-500 mt-2">{t.notFoundSub}</p>
+                  <button
+                    onClick={() => { setActiveFacility('all'); setSearchQuery(''); }}
+                    className="mt-6 text-indigo-600 font-bold hover:underline"
+                  >
+                    {t.resetFilters}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {!loading && properties.length === 0 && (
+            <div className="text-center py-32 bg-white rounded-[2rem] border border-dashed border-gray-200 shadow-sm">
+              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <MapPin size={32} className="text-slate-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">{t.noProperties}</h2>
+              <p className="text-slate-500 max-w-xs mx-auto text-sm">{t.noPropertiesSub}</p>
             </div>
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">{t.noProperties}</h2>
-            <p className="text-slate-500 max-w-xs mx-auto text-sm">{t.noPropertiesSub}</p>
-          </div>
-        )}
+          )}
+
+        </div>
 
         {loading && (
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-8 animate-pulse">
             <div className="h-32 bg-gray-200 animate-pulse rounded-[2rem]" />
             <div className="h-16 bg-gray-200 animate-pulse rounded-2xl" />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
