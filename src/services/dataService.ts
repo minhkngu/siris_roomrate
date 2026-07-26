@@ -155,8 +155,10 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<{
     .filter(a => a.category === 'room' || a.category === 'general')
     .map(a => getTranslatedValue(a, 'name', lang));
 
-  // Map data to our frontend types
-  const properties = branches.map(branch => {
+  // Map data to our frontend types (filtering out hidden branches)
+  const properties = branches
+    .filter(branch => branch.is_hidden !== true && branch.is_hidden !== 'true' && String(branch.is_hidden) !== 'true')
+    .map(branch => {
     // Try to match branch ID with room's branch reference in various formats
     const branchRooms: RoomType[] = rooms
       .filter(room => {
