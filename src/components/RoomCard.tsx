@@ -259,11 +259,11 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
 
       <div className="p-4 sm:p-5 flex flex-col flex-1">
         <div className="mb-3">
-          <div className="flex items-center gap-2 overflow-hidden">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
             <span className="text-base sm:text-lg font-bold text-indigo-600 uppercase tracking-tight shrink-0">
               {branchTag || 'Siris'}
             </span>
-            <h3 className="text-base sm:text-lg font-bold text-slate-800 truncate" title={room.name}>
+            <h3 className="text-base sm:text-lg font-bold text-slate-800 break-words flex-1 min-w-0" title={room.name}>
               {room.name}
             </h3>
             {room.warning && (
@@ -271,13 +271,12 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
                 <button
                   ref={warningBtnRef}
                   onClick={(e) => { setShowWarning(prev => !prev); setWarningPos(getButtonPos(e)); }}
-                  className="bg-orange-100 active:bg-orange-200 rounded-full pl-3 pr-2 py-1.5 flex items-center justify-center gap-2 active:scale-[0.96] transition-all shadow-sm cursor-pointer shrink-0"
+                  className="bg-orange-100 active:bg-orange-200 rounded-full px-2 py-1 flex items-center justify-center gap-1 active:scale-[0.96] transition-all shadow-sm cursor-pointer shrink-0 ml-auto sm:ml-0"
+                  title={lang === 'en' ? 'Notice' : 'Chú ý'}
                 >
-                  <AlertCircle size={14} className="w-3.5 h-3.5 text-orange-600 shrink-0" strokeWidth={2.5} />
+                  <AlertCircle size={13} className="w-3.5 h-3.5 text-orange-600 shrink-0" strokeWidth={2.5} />
                   <span className="text-orange-600 font-bold text-[10px] leading-none tracking-wider uppercase whitespace-nowrap">{lang === 'en' ? 'NOTICE' : 'CHÚ Ý'}</span>
-                  <div className="bg-orange-200/60 rounded-full p-0.5 shrink-0">
-                    <ChevronRight size={10} className="w-2.5 h-2.5 text-orange-700" strokeWidth={2.5} />
-                  </div>
+                  <ChevronRight size={10} className="w-2.5 h-2.5 text-orange-700 shrink-0" strokeWidth={2.5} />
                 </button>
                 {showWarning && warningPos && createPortal(
                   <div
