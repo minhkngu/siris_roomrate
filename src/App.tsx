@@ -263,7 +263,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
               {filteredRooms.map((room, idx) => (
                 <RoomCard
                   key={`${room.property.id}-${room.id}`}
@@ -310,7 +310,7 @@ export default function App() {
             <div className="h-16 bg-gray-200 rounded-2xl" />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-96 bg-gray-200 rounded-[2rem]" />
+                <div key={i} className="h-[35rem] bg-gray-200 rounded-[1.75rem]" />
               ))}
             </div>
           </div>

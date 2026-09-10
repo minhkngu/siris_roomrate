@@ -5,13 +5,7 @@ import { RoomType } from '../types';
 import { Language } from '../translations';
 import { useCloudinaryImages } from '../hooks/useCloudinaryImages';
 import { AmenityList } from './AmenityList';
-
-const priceFormatter = new Intl.NumberFormat('vi-VN');
-
-const formatPrice = (price: number | null | undefined) => {
-  if (!price || price === 0) return 'N/A';
-  return `${priceFormatter.format(price)}`;
-};
+import { MonthlyRateCard, NightlyRateCard } from './RoomPricing';
 
 interface RoomCardProps {
   room: RoomType;
@@ -159,10 +153,10 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
   }, [showWarning]);
 
   return (
-    <div className="bg-white rounded-[2rem] overflow-hidden border-2 border-gray-200/80 shadow-md hover:border-indigo-300 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all group h-full flex flex-col">
+    <article className="bg-white rounded-[1.75rem] overflow-hidden border border-slate-200/80 shadow-[0_12px_36px_-24px_rgba(15,23,42,0.45)] hover:-translate-y-1 hover:border-indigo-200 hover:shadow-[0_24px_48px_-24px_rgba(79,70,229,0.3)] transition-all duration-300 group h-full flex flex-col">
       <div
         ref={containerRef}
-        className={`relative h-64 sm:h-80 overflow-hidden group/carousel bg-gray-100 shrink-0 border-b border-gray-100 select-none ${loading ? 'animate-shimmer bg-gray-200' : ''}`}
+        className={`relative h-64 sm:h-72 overflow-hidden group/carousel bg-slate-100 shrink-0 select-none ${loading ? 'animate-shimmer bg-gray-200' : ''}`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -257,15 +251,12 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
         )}
       </div>
 
-      <div className="p-4 sm:p-5 flex flex-col flex-1">
-        <div className="mb-3">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-            <span className="text-base sm:text-lg font-bold text-indigo-600 uppercase tracking-tight shrink-0">
+      <div className="p-5 sm:p-6 flex flex-col flex-1">
+        <div className="mb-4">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mb-1.5">
+            <span className="text-[11px] font-extrabold text-indigo-600 uppercase tracking-[0.14em] shrink-0">
               {branchTag || 'Siris'}
             </span>
-            <h3 className="text-base sm:text-lg font-bold text-slate-800 break-words flex-1 min-w-0" title={room.name}>
-              {room.name}
-            </h3>
             {room.warning && (
               <>
                 <button
@@ -294,57 +285,26 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
               </>
             )}
           </div>
+          <div className="w-full overflow-x-auto scrollbar-hide">
+            <h3 className="inline-block whitespace-nowrap text-lg font-extrabold text-slate-900 leading-snug" title={room.name}>
+              {room.name}
+            </h3>
+          </div>
         </div>
 
-        <div className="mb-3">
+        <div className="mb-5">
           <AmenityList included={room.amenities} excluded={room.excludedAmenities} compact={true} />
         </div>
 
-        <div className="pt-4 border-t-2 border-gray-100 mt-auto">
-          <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-5">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-0.5 whitespace-nowrap">
-                {lang === 'en' ? 'Sun - Thu' : 'CN - T5'}
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-slate-800 whitespace-nowrap">
-                {formatPrice(room.pricing.weekday)} VND
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-0.5 whitespace-nowrap">
-                {lang === 'en' ? 'Fri - Sat' : 'T6 - T7'}
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-slate-800 whitespace-nowrap">
-                {formatPrice(room.pricing.weekend)} VND
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 sm:gap-4">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-0.5 whitespace-nowrap">
-                {t.monthlyUnder3Label || (lang === 'en' ? 'MONTH (<3M)' : 'THÁNG (<3TH)')}
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-indigo-600 whitespace-nowrap">
-                {formatPrice(room.pricing.monthlyUnder3)} VND
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-0.5 whitespace-nowrap">
-                {t.monthlyOver3Label || (lang === 'en' ? 'MONTH (>3M) + FEES' : 'THÁNG (>3TH) + PHÍ')}
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-indigo-600 mb-1 whitespace-nowrap">
-                {formatPrice(room.pricing.monthlyOver3)} {room.pricing.monthlyOver3 && room.pricing.monthlyOver3 > 0 ? 'VND' : ''}
-              </span>
-              {room.pricing.fees && (
-                <p className="text-[10px] text-slate-500 whitespace-pre-line leading-tight font-medium">
-                  {room.pricing.fees}
-                </p>
-              )}
-            </div>
-          </div>
+        <div className="mt-auto space-y-3 pt-4 border-t border-slate-100">
+          <NightlyRateCard
+            weekday={room.pricing.weekday}
+            weekend={room.pricing.weekend}
+            lang={lang}
+          />
+          <MonthlyRateCard price={room.pricing.monthlyUnder3} lang={lang} />
         </div>
       </div>
-    </div>
+    </article>
   );
 };
