@@ -251,8 +251,8 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
         )}
       </div>
 
-      <div className="p-5 sm:p-6 flex flex-col flex-1">
-        <div className="mb-4">
+      <div className="p-4 sm:p-6 flex flex-col flex-1">
+        <div className="mb-3 sm:mb-4">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mb-1.5">
             <span className="text-[11px] font-extrabold text-indigo-600 uppercase tracking-[0.14em] shrink-0">
               {branchTag || 'Siris'}
@@ -292,11 +292,11 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
           </div>
         </div>
 
-        <div className="mb-5">
+        <div className="mb-4 sm:mb-5">
           <AmenityList included={room.amenities} excluded={room.excludedAmenities} compact={true} />
         </div>
 
-        <div className="mt-auto space-y-3 pt-4 border-t border-slate-100">
+        <div className="mt-auto space-y-2.5 border-t border-slate-100 pt-3.5 sm:space-y-3 sm:pt-4">
           <NightlyRateCard
             weekday={room.pricing.weekday}
             weekend={room.pricing.weekend}

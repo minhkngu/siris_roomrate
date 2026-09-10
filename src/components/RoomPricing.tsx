@@ -19,29 +19,29 @@ export const NightlyRateCard: React.FC<NightlyRateCardProps> = ({ weekday, weeke
     className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
     aria-label={lang === 'en' ? 'Nightly rates' : 'Giá theo đêm'}
   >
-    <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-2.5">
-      <h4 className="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-600">
+    <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/80 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
+      <h4 className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-slate-600 sm:text-xs sm:tracking-[0.12em]">
         {lang === 'en' ? 'Nightly rates' : 'Giá theo đêm'}
       </h4>
-      <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-500 shadow-sm">
+      <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 shadow-sm sm:px-2.5 sm:py-1 sm:text-[11px]">
         VND
       </span>
     </div>
 
     <div className="grid grid-cols-2 divide-x divide-slate-100">
-      <div className="px-4 py-3.5">
-        <span className="mb-1 block whitespace-nowrap text-xs font-bold uppercase tracking-wider text-slate-400">
+      <div className="px-3 py-3 sm:px-4 sm:py-3.5">
+        <span className="mb-1 block whitespace-nowrap text-[11px] font-bold uppercase tracking-wider text-slate-400 sm:text-xs">
           {lang === 'en' ? 'Sun - Thu' : 'CN - T5'}
         </span>
-        <span className="whitespace-nowrap text-lg font-black tracking-tight text-slate-900">
+        <span className="whitespace-nowrap text-base font-black tracking-tight text-slate-900 sm:text-lg">
           {formatPrice(weekday)}
         </span>
       </div>
-      <div className="bg-indigo-50/60 px-4 py-3.5">
-        <span className="mb-1 block whitespace-nowrap text-xs font-bold uppercase tracking-wider text-indigo-400">
+      <div className="bg-indigo-50/60 px-3 py-3 sm:px-4 sm:py-3.5">
+        <span className="mb-1 block whitespace-nowrap text-[11px] font-bold uppercase tracking-wider text-indigo-400 sm:text-xs">
           {lang === 'en' ? 'Fri - Sat' : 'T6 - T7'}
         </span>
-        <span className="whitespace-nowrap text-lg font-black tracking-tight text-indigo-700">
+        <span className="whitespace-nowrap text-base font-black tracking-tight text-indigo-700 sm:text-lg">
           {formatPrice(weekend)}
         </span>
       </div>
@@ -56,22 +56,21 @@ interface MonthlyRateCardProps {
 
 export const MonthlyRateCard: React.FC<MonthlyRateCardProps> = ({ price, lang }) => (
   <section
-    className="flex items-center justify-between gap-4 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3.5"
+    className="rounded-2xl border border-indigo-200 bg-indigo-50 px-3 py-2.5"
     aria-label={lang === 'en' ? 'Monthly rate under 3 months' : 'Giá tháng dưới 3 tháng'}
   >
-    <div className="min-w-0">
-      <h4 className="text-xs font-extrabold uppercase tracking-[0.12em] text-indigo-700">
-        {lang === 'en' ? 'Under 3 months' : 'Dưới 3 tháng'}
-      </h4>
-      <p className="mt-0.5 text-sm text-indigo-600/70">
-        {lang === 'en' ? 'Monthly rate' : 'Giá thuê theo tháng'}
-      </p>
-    </div>
-    <div className="shrink-0 text-right">
-      <span className="block whitespace-nowrap text-lg font-black tracking-tight text-indigo-700">
+    <h4 className="whitespace-nowrap text-[10px] font-extrabold uppercase tracking-[0.08em] text-indigo-700">
+      {lang === 'en' ? 'Under 3 months' : 'Dưới 3 tháng'}
+    </h4>
+    <div className="mt-0.5 flex min-w-0 items-baseline gap-1.5">
+      <span className="whitespace-nowrap text-base font-black tracking-tight text-indigo-700">
         {formatPrice(price)}
       </span>
-      {price > 0 && <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-400">VND / {lang === 'en' ? 'month' : 'tháng'}</span>}
+      {price > 0 && (
+        <span className="whitespace-nowrap text-[9px] font-bold uppercase tracking-wide text-indigo-400">
+          VND / {lang === 'en' ? 'month' : 'tháng'}
+        </span>
+      )}
     </div>
   </section>
 );
