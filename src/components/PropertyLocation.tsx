@@ -21,15 +21,22 @@ const toWorldPixel = (lat: number, lon: number) => {
   };
 };
 
-const getPosition = (point: MapPoint, center: { lat: number; lon: number }) => {
+const getPosition = (
+  point: Pick<MapPoint, 'lat' | 'lon'>,
+  center: { lat: number; lon: number },
+  mobilePoint: Pick<MapPoint, 'lat' | 'lon'> = point,
+) => {
   const pointPixel = toWorldPixel(point.lat, point.lon);
+  const mobilePixel = toWorldPixel(mobilePoint.lat, mobilePoint.lon);
   const centerPixel = toWorldPixel(center.lat, center.lon);
   const sourceX = MAP_WIDTH / 2 + pointPixel.x - centerPixel.x;
   const sourceY = MAP_SOURCE_HEIGHT / 2 + pointPixel.y - centerPixel.y;
+  const mobileSourceX = MAP_WIDTH / 2 + mobilePixel.x - centerPixel.x;
+  const mobileSourceY = MAP_SOURCE_HEIGHT / 2 + mobilePixel.y - centerPixel.y;
 
   return {
-    '--map-left-mobile': `${((sourceX - MOBILE_CROP_LEFT) / MOBILE_DISPLAY_WIDTH) * 100}%`,
-    '--map-top-mobile': `${(sourceY / MAP_SOURCE_HEIGHT) * 100}%`,
+    '--map-left-mobile': `${((mobileSourceX - MOBILE_CROP_LEFT) / MOBILE_DISPLAY_WIDTH) * 100}%`,
+    '--map-top-mobile': `${(mobileSourceY / MAP_SOURCE_HEIGHT) * 100}%`,
     '--map-left-desktop': `${(sourceX / MAP_WIDTH) * 100}%`,
     '--map-top-desktop': `${((sourceY - MAP_CROP_TOP) / MAP_DISPLAY_HEIGHT) * 100}%`,
   } as CSSProperties;
@@ -40,6 +47,13 @@ interface PropertyLocationProps {
   propertyTag?: string;
   lang: Language;
 }
+
+const labelPosition = (placement: 'left' | 'right' | 'above' | 'below') => ({
+  left: 'right-4 top-0 -translate-y-1/2',
+  right: 'left-4 top-0 -translate-y-1/2',
+  above: 'bottom-4 left-0 -translate-x-1/2',
+  below: 'left-0 top-4 -translate-x-1/2',
+}[placement]);
 
 export const PropertyLocation: React.FC<PropertyLocationProps> = ({
   propertyName,
@@ -66,10 +80,13 @@ export const PropertyLocation: React.FC<PropertyLocationProps> = ({
         <div
           key={road.name}
           className="pointer-events-none absolute left-[var(--map-left-mobile)] top-[var(--map-top-mobile)] z-[5] sm:left-[var(--map-left-desktop)] sm:top-[var(--map-top-desktop)]"
-          style={getPosition(road, location.center)}
+          style={getPosition(road, location.center, {
+            lat: road.mobileLat ?? road.lat,
+            lon: road.mobileLon ?? road.lon,
+          })}
         >
           <span
-            className="absolute left-0 top-0 whitespace-nowrap text-[7px] font-medium text-slate-600 sm:text-[10px]"
+            className="absolute left-0 top-0 whitespace-nowrap text-[8px] font-semibold text-slate-700 sm:text-[10px] sm:font-medium sm:text-slate-600"
             style={{ transform: `translate(-50%, -50%) rotate(${road.rotation}deg)`, textShadow: '0 1px 2px white, 0 -1px 2px white, 1px 0 2px white, -1px 0 2px white' }}
           >
             {road.name}
@@ -83,7 +100,13 @@ export const PropertyLocation: React.FC<PropertyLocationProps> = ({
           style={getPosition(point, location.center)}
         >
           <span className={`absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-indigo-600 shadow-sm ${point.primary ? 'h-4 w-4 ring-4 ring-indigo-500/20 sm:h-5 sm:w-5' : 'h-2.5 w-2.5 sm:h-3 sm:w-3'}`} />
-          <span className={`absolute top-0 flex -translate-y-1/2 whitespace-nowrap rounded-md border px-1.5 py-1 text-[9px] font-semibold leading-none shadow-sm backdrop-blur-sm sm:px-2.5 sm:py-1.5 sm:text-xs ${point.labelSide === 'left' ? 'right-4 sm:right-[1.125rem]' : 'left-4 sm:left-[1.125rem]'} ${point.primary ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200/90 bg-white/95 text-slate-800'}`}>
+          <span className={`absolute hidden whitespace-nowrap rounded-md border px-2.5 py-1.5 text-xs font-semibold leading-none shadow-sm backdrop-blur-sm lg:flex ${labelPosition(point.labelSide === 'left' ? 'left' : 'right')} ${point.primary ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200/90 bg-white/95 text-slate-800'}`}>
+            {lang === 'en' && point.nameEn ? point.nameEn : point.name}{point.distance && <span className="ml-1 font-bold text-indigo-600">· {point.distance}</span>}
+          </span>
+          <span className={`absolute hidden whitespace-nowrap rounded-md border px-2 py-1 text-[10px] font-semibold leading-none shadow-sm backdrop-blur-sm sm:flex lg:hidden ${labelPosition(point.compactLabelPlacement ?? (point.labelSide === 'left' ? 'left' : 'right'))} ${point.primary ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200/90 bg-white/95 text-slate-800'}`}>
+            {lang === 'en' && point.nameEn ? point.nameEn : point.name}{point.distance && <span className="ml-1 font-bold text-indigo-600">· {point.distance}</span>}
+          </span>
+          <span className={`absolute flex whitespace-nowrap rounded-md border px-1.5 py-1 text-[9px] font-semibold leading-none shadow-sm backdrop-blur-sm sm:hidden ${labelPosition(point.mobileLabelPlacement ?? point.compactLabelPlacement ?? (point.labelSide === 'left' ? 'left' : 'right'))} ${point.primary ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200/90 bg-white/95 text-slate-800'}`}>
             {lang === 'en' && point.nameEn ? point.nameEn : point.name}{point.distance && <span className="ml-1 font-bold text-indigo-600">· {point.distance}</span>}
           </span>
         </div>
