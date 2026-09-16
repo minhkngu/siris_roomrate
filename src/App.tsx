@@ -9,6 +9,7 @@ import { RoomCard } from './components/RoomCard';
 import { AmenityList } from './components/AmenityList';
 import { Footer } from './components/Footer';
 import { GeneralPolicies } from './components/GeneralPolicies';
+import { PropertyLocation } from './components/PropertyLocation';
 
 export default function App() {
   const [lang, setLang] = useState<Language>(() => {
@@ -262,6 +263,14 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            {selectedProperty && (
+              <PropertyLocation
+                propertyName={selectedProperty.name}
+                propertyTag={selectedProperty.tag}
+                lang={lang}
+              />
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
               {filteredRooms.map((room, idx) => (
