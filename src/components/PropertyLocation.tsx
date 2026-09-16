@@ -62,6 +62,20 @@ export const PropertyLocation: React.FC<PropertyLocationProps> = ({
         className="absolute inset-0 h-full w-full object-cover"
         loading="lazy"
       />
+      {location.roadLabels.map((road) => (
+        <div
+          key={road.name}
+          className="pointer-events-none absolute left-[var(--map-left-mobile)] top-[var(--map-top-mobile)] z-[5] sm:left-[var(--map-left-desktop)] sm:top-[var(--map-top-desktop)]"
+          style={getPosition(road, location.center)}
+        >
+          <span
+            className="absolute left-0 top-0 whitespace-nowrap text-[7px] font-medium text-slate-600 sm:text-[10px]"
+            style={{ transform: `translate(-50%, -50%) rotate(${road.rotation}deg)`, textShadow: '0 1px 2px white, 0 -1px 2px white, 1px 0 2px white, -1px 0 2px white' }}
+          >
+            {road.name}
+          </span>
+        </div>
+      ))}
       {location.points.map((point) => (
         <div
           key={point.name}

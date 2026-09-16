@@ -12,12 +12,23 @@ export interface PropertyLocationData {
   mapImage: string;
   center: { lat: number; lon: number };
   points: MapPoint[];
+  roadLabels: Array<{ name: string; lat: number; lon: number; rotation: number }>;
 }
+
+const nearbyRoadLabels = [
+  // Anchors projected onto actual OSM road segments; angles follow the segment.
+  { name: 'Nguyễn Thị Thập', lat: 10.7387621, lon: 106.7113764, rotation: 7.6 },
+  { name: 'Nguyễn Hữu Thọ', lat: 10.7366196, lon: 106.7003162, rotation: -80.2 },
+  { name: 'Nguyễn Văn Linh', lat: 10.7282522, lon: 106.7075012, rotation: -1.5 },
+  { name: 'Nguyễn Đổng Chi', lat: 10.7350608, lon: 106.7095898, rotation: 43.6 },
+  { name: 'Bùi Bằng Đoàn', lat: 10.7320106, lon: 106.7085163, rotation: 88.8 },
+];
 
 export const propertyLocations: Record<string, PropertyLocationData> = {
   mia: {
-    mapImage: '/maps/siris-mia-street-map.png',
+    mapImage: '/maps/siris-mia-street-map.png?v=4',
     center: { lat: 10.7339474, lon: 106.7072669 },
+    roadLabels: nearbyRoadLabels,
     points: [
       { name: 'Siris Mia', lat: 10.7339474, lon: 106.7072669, primary: true },
       { name: 'SC VivoCity', lat: 10.7302089, lon: 106.7033641, distance: '1,3 km' },
@@ -28,8 +39,9 @@ export const propertyLocations: Record<string, PropertyLocationData> = {
     ],
   },
   lune: {
-    mapImage: '/maps/siris-lune-street-map.png',
+    mapImage: '/maps/siris-lune-street-map.png?v=4',
     center: { lat: 10.7339006, lon: 106.7079854 },
+    roadLabels: nearbyRoadLabels,
     points: [
       { name: 'Siris Lune', lat: 10.7339006, lon: 106.7079854, primary: true },
       { name: 'SC VivoCity', lat: 10.7302089, lon: 106.7033641, distance: '1,5 km' },
