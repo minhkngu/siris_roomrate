@@ -29,7 +29,6 @@ const nearbyRoadLabels = [
   { name: 'Nguyễn Thị Thập', lat: 10.7387621, lon: 106.7113764, rotation: 7.6, mobileLat: 10.73845, mobileLon: 106.7132 },
   { name: 'Nguyễn Hữu Thọ', lat: 10.7366196, lon: 106.7003162, rotation: -80.2 },
   { name: 'Nguyễn Văn Linh', lat: 10.7282018, lon: 106.6964212, rotation: -0.2, mobileLon: 106.7048 },
-  { name: 'Nguyễn Đổng Chi', lat: 10.7350608, lon: 106.7095898, rotation: 43.6 },
   { name: 'Bùi Bằng Đoàn', lat: 10.7320106, lon: 106.7085163, rotation: 88.8 },
 ];
 
