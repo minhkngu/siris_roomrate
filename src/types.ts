@@ -32,7 +32,7 @@ export interface RoomType {
   name: string;
   sqm?: number;
   images: string[]; // Changed from image: string
-  storageFolder?: string; // Supabase storage folder path
+  storageFolder?: string;
   amenities: string[];
   excludedAmenities?: string[];
   pricing: Pricing;
@@ -47,7 +47,7 @@ export interface Property {
   address: string;
   description: string;
   images: string[];
-  storageFolder?: string; // Supabase storage folder path
+  storageFolder?: string;
   amenities: string[];
   excludedAmenities?: string[];
   policies: Policy[];
