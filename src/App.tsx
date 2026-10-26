@@ -21,7 +21,6 @@ export default function App() {
   const [dateAdjustments, setDateAdjustments] = useState<DateAdjustment[]>([]);
   const [settings, setSettings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const hasLoadedData = useRef(false);
 
@@ -55,7 +54,6 @@ export default function App() {
     const loadData = async () => {
       if (cancelled || inFlight) return;
       inFlight = true;
-      setRefreshing(true);
       clearTimeout(timer);
       if (!hasLoadedData.current) setLoading(true);
       try {
@@ -75,7 +73,6 @@ export default function App() {
       } finally {
         inFlight = false;
         if (!cancelled) setLoading(false);
-        if (!cancelled) setRefreshing(false);
         if (!cancelled && document.visibilityState === 'visible') {
           timer = setTimeout(loadData, 10_000);
         }
@@ -156,16 +153,9 @@ export default function App() {
     });
   }, [heroTitle]);
 
-  const refreshStatus = refreshing && !loading ? (
-    <div role="status" className="fixed bottom-4 right-4 z-50 rounded-full border border-slate-200 bg-white/95 px-3 py-1.5 text-xs text-slate-500 shadow-sm">
-      {lang === 'en' ? 'Updating from Base…' : 'Đang cập nhật từ Base…'}
-    </div>
-  ) : null;
-
   if (currentView === 'policies') {
     return (
       <div className="min-h-screen bg-gray-50 text-slate-900 font-sans">
-        {refreshStatus}
         <nav className="sticky top-0 z-50 bg-slate-900 border-b border-slate-800 shadow-lg">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16 items-center">
@@ -211,7 +201,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-slate-900 font-sans">
-      {refreshStatus}
       <nav className="sticky top-0 z-50 bg-slate-900 border-b border-slate-800 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
