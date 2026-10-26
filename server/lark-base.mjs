@@ -1,4 +1,4 @@
-import { normalizeShortTermData } from '../scripts/sync-short-term.mjs';
+import { normalizeShortTermData } from './normalize-short-term.mjs';
 
 const API = 'https://open.larksuite.com/open-apis';
 const TABLES = {

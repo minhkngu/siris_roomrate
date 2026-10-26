@@ -112,9 +112,14 @@ kinh doanh mẫu khi cột Base trống. Thông tin đăng nhập không gửi t
 `.local/short-term.json` (không đưa vào Git), nhưng giao diện không đọc file này.
 Ảnh phòng vẫn dùng Cloudinary và bản đồ vẫn là tài nguyên của dự án.
 
-Đây là kết nối **local-only**. Build frontend không bao gồm backend Lark;
-chưa triển khai hay thay đổi website production. Trước khi deploy cần có API
-phía máy chủ cho `/api/short-term`, dùng quyền đọc Base phù hợp với môi trường hosting.
+## Production trên Vercel
+
+`api/short-term.js` là backend production cho cùng endpoint `/api/short-term`.
+Thiết lập `LARK_APP_ID` và `LARK_APP_SECRET` dưới dạng Secret trong môi trường
+Production của dự án `siris-roomrate`. `LARK_BASE_TOKEN` có thể ghi đè Base mặc định.
+Ứng dụng Lark phải có quyền đọc Siris Web. Production không dùng cấu hình từ
+thư mục dự án khác, file dữ liệu local hoặc `lark-cli`.
+Function chạy tại Singapore, trả dữ liệu mới với `Cache-Control: no-store`.
 
 ## Công nghệ
 

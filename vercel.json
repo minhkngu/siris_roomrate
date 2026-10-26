@@ -1,8 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "git": {
-    "deploymentEnabled": {
-      "main": false
+  "regions": ["sin1"],
+  "functions": {
+    "api/short-term.js": {
+      "maxDuration": 30
     }
   }
 }

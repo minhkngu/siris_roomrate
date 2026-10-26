@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { decodeRecords, normalizeShortTermData } from '../scripts/sync-short-term.mjs';
+import { decodeRecords } from '../scripts/sync-short-term.mjs';
+import { normalizeShortTermData } from '../server/normalize-short-term.mjs';
 
 test('decodes the direct Base matrix using response column order and stable record IDs', () => {
   const rows = decodeRecords({ fields: ['name', 'braches', 'weekdayprice'], record_id_list: ['rec-room'], data: [['Studio', [{ id: 'rec-branch' }], 460000]] });
