@@ -112,7 +112,7 @@ data.branches = data.branches.filter(row => row.name?.trim()).map(row => ({
 }));
 const branchIds = new Set(data.branches.map(row => row.id));
 data.rooms = data.rooms.filter(row => row.name?.trim()).map(row => {
-  const branchId = row.braches?.[0]?.id;
+  const branchId = row.branch?.[0]?.id;
   if (!branchIds.has(branchId)) throw new Error(`Room ${row.name} has no valid branch`);
   for (const field of ['weekdayprice', 'weekendprice', 'monthly_under_3']) {
     if (typeof row[field] !== 'number' || row[field] < 0) throw new Error(`Invalid ${field}: ${row.name}`);

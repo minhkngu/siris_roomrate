@@ -4,11 +4,11 @@ import { createLarkReader, decodeApiRecord } from '../server/lark-base.mjs';
 
 test('API values preserve links and convert string prices without changing Cloudinary tags', () => {
   const row = decodeApiRecord({ record_id: 'room', fields: {
-    name: [{ text: 'Studio' }], braches: [{ record_ids: ['mia'], text: 'Mia' }],
+    name: [{ text: 'Studio' }], branch: [{ record_ids: ['mia'], text: 'Mia' }],
     weekdayprice: '440000', is_hidden: 'false', date: '1772902800000', tag: 'deluxe_ 1br_apartment',
   } });
   assert.equal(row.name, 'Studio');
-  assert.deepEqual(row.braches, [{ id: 'mia' }]);
+  assert.deepEqual(row.branch, [{ id: 'mia' }]);
   assert.equal(row.weekdayprice, 440000);
   assert.equal(row.tag, 'deluxe_ 1br_apartment');
   assert.equal(row.date, 1772902800000);
@@ -32,7 +32,7 @@ test('direct reader reuses authentication, reads new cells and traverses all pag
     const secondPage = url.includes('page_token=next');
     if (rooms && !secondPage) roomReads++;
     const items = branches ? [{ record_id: 'mia', fields: { name: 'Mia', is_hidden: 'false' } }]
-      : rooms && !secondPage ? [{ record_id: 'room', fields: { name: 'Studio', braches: [{ record_ids: ['mia'], text: 'Mia' }], weekdayprice: String(roomReads === 1 ? 440000 : 460000), weekendprice: '480000', monthly_under_3: '10200000' } }] : [];
+      : rooms && !secondPage ? [{ record_id: 'room', fields: { name: 'Studio', branch: [{ record_ids: ['mia'], text: 'Mia' }], weekdayprice: String(roomReads === 1 ? 440000 : 460000), weekendprice: '480000', monthly_under_3: '10200000' } }] : [];
     return Response.json({ code: 0, data: { items, has_more: rooms && !secondPage, page_token: rooms && !secondPage ? 'next' : undefined } });
   } });
   const [first, concurrent] = await Promise.all([reader(), reader()]);

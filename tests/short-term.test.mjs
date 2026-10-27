@@ -4,8 +4,8 @@ import { decodeRecords } from '../scripts/sync-short-term.mjs';
 import { normalizeShortTermData } from '../server/normalize-short-term.mjs';
 
 test('decodes the direct Base matrix using response column order and stable record IDs', () => {
-  const rows = decodeRecords({ fields: ['name', 'braches', 'weekdayprice'], record_id_list: ['rec-room'], data: [['Studio', [{ id: 'rec-branch' }], 460000]] });
-  assert.deepEqual(rows, [{ name: 'Studio', braches: [{ id: 'rec-branch' }], weekdayprice: 460000, record_id: 'rec-room', id: 'rec-room' }]);
+  const rows = decodeRecords({ fields: ['name', 'branch', 'weekdayprice'], record_id_list: ['rec-room'], data: [['Studio', [{ id: 'rec-branch' }], 460000]] });
+  assert.deepEqual(rows, [{ name: 'Studio', branch: [{ id: 'rec-branch' }], weekdayprice: 460000, record_id: 'rec-room', id: 'rec-room' }]);
   assert.throws(() => decodeRecords({ fields: ['name'], record_id_list: [], data: [['Studio']] }), /Invalid Lark/);
   assert.throws(() => decodeRecords({ fields: ['name', 'price'], record_id_list: ['room'], data: [['Studio']] }), /Invalid Lark/);
 });
@@ -13,7 +13,7 @@ test('decodes the direct Base matrix using response column order and stable reco
 const fixture = () => ({
   source: 'Siris Web / short-term',
   branches: [{ id: 'mia', name: 'Mia', is_hidden: ['false'], policies: '[{"content":"Policy"}]' }, { id: 'blank', name: null }],
-  rooms: [{ id: 'room', name: 'Studio', braches: [{ id: 'mia' }], weekdayprice: 460000, weekendprice: 550000, monthly_under_3: 12000000, is_hidden: 'false', tag: 'deluxe_ 1br_apartment', amenities: 'wifi,bếp (không có gia vị,lò vi sóng)', amenities_en: 'Wi-Fi,kitchen (no condiments,no microwave)' }],
+  rooms: [{ id: 'room', name: 'Studio', branch: [{ id: 'mia' }], weekdayprice: 460000, weekendprice: 550000, monthly_under_3: 12000000, is_hidden: 'false', tag: 'deluxe_ 1br_apartment', amenities: 'wifi,bếp (không có gia vị,lò vi sóng)', amenities_en: 'Wi-Fi,kitchen (no condiments,no microwave)' }],
   settings: [{ key: 'email', value: '{"value":"info@siris.vn"}' }, { key: 'general_policies', value: '[{"title":"Check-in","content":"14:00"}]' }],
   discounts: [], dateAdjustments: [{ id: 'adjustment', date: 1772902800000, type: 'surcharge', amount: 200000, ispercentage: 'false' }, { date: null }],
 });
@@ -44,7 +44,7 @@ test('normalizes visibility, settings and Vietnam dates without losing policies'
 
 test('rejects orphan rooms rather than silently showing incorrect properties', () => {
   const raw = fixture();
-  raw.rooms[0].braches = [{ id: 'missing' }];
+  raw.rooms[0].branch = [{ id: 'missing' }];
   assert.throws(() => normalizeShortTermData(raw), /no valid branch/);
 });
 
