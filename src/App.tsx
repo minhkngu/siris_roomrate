@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { MapPin, Search } from 'lucide-react';
 import { Property, Policy, DateAdjustment } from './types';
 import { fetchProperties } from './services/dataService';
@@ -21,6 +21,7 @@ export default function App() {
   const [dateAdjustments, setDateAdjustments] = useState<DateAdjustment[]>([]);
   const [settings, setSettings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasLoadedData = useRef(false);
 
   const [activeFacility, setActiveFacility] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,7 +37,8 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     const loadData = async () => {
-      setLoading(true);
+      // Skeleton only on the first load; a language switch swaps content in place.
+      if (!hasLoadedData.current) setLoading(true);
       try {
         const data = await fetchProperties(lang);
         if (cancelled) return;
@@ -44,9 +46,10 @@ export default function App() {
         setGeneralPolicies(data.generalPolicies);
         setDateAdjustments(data.dateAdjustments);
         setSettings(data.settings || []);
-        if (data.properties.length > 0) {
-          setActiveFacility(data.properties[0].id);
-        }
+        hasLoadedData.current = true;
+        // Keep the selected property when only the language changed.
+        setActiveFacility(current => current === 'all' || data.properties.some(property => property.id === current)
+          ? current : (data.properties[0]?.id ?? ''));
       } catch (error) {
         console.error('Failed to load properties:', error);
       } finally {

@@ -1,9 +1,7 @@
-import { supabase } from '../lib/supabase';
 import { Property, RoomType, Policy, DateAdjustment } from '../types';
 import { Language } from '../translations';
 
-// Cache - only cache raw Supabase data, not transformed
-let cachedData: {
+interface BaseData {
   branches: any[];
   rooms: any[];
   discounts: any[];
@@ -12,7 +10,20 @@ let cachedData: {
   roomAmenities: any[];
   settings: any[];
   dateAdjustments: any[];
-} | null = null;
+}
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+declare global {
+  interface Window {
+    // Requests started by the inline script in index.html, before this bundle loads.
+    __sirisTables?: Record<string, Promise<any[]>>;
+  }
+}
+
+// One read per page load, shared by every caller (language switches included).
+let pendingData: Promise<BaseData> | null = null;
 
 const parseArray = (val: any): string[] => {
   if (Array.isArray(val)) return val;
@@ -38,56 +49,53 @@ const parseArray = (val: any): string[] => {
   return [];
 };
 
-export const fetchAllData = async () => {
-  if (cachedData) return cachedData;
+const emptyData = (): BaseData => ({
+  branches: [], rooms: [], discounts: [], amenities: [], branchAmenities: [], roomAmenities: [], settings: [], dateAdjustments: [],
+});
 
-  if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+// Plain PostgREST read; the full Supabase client is not needed for public selects.
+const fetchTable = async (table: string): Promise<any[]> => {
+  try {
+    const early = window.__sirisTables?.[table];
+    if (early) {
+      delete window.__sirisTables![table];
+      const rows = await early.catch(() => null);
+      if (Array.isArray(rows)) return rows;
+    }
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const rows = await response.json();
+    return Array.isArray(rows) ? rows : [];
+  } catch (error) {
+    console.warn(`Error fetching table ${table}:`, error);
+    return [];
+  }
+};
+
+export const fetchAllData = (): Promise<BaseData> => {
+  if (pendingData) return pendingData;
+
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.error('Supabase credentials missing.');
-    return { branches: [], rooms: [], discounts: [], amenities: [], branchAmenities: [], roomAmenities: [], settings: [], dateAdjustments: [] };
+    return Promise.resolve(emptyData());
   }
 
-  try {
-    const fetchTable = async (table: string, isOptional = false) => {
-      const { data, error } = await supabase.from(table).select('*');
-      if (error) {
-        const isTableNotFound = error.message.includes('Could not find the table') || error.code === 'PGRST116';
-        if (!isOptional || !isTableNotFound) {
-          console.warn(`Error fetching table ${table}:`, error.message);
-        }
-        return [];
-      }
-      return data || [];
-    };
-
-    const [
-      branches,
-      rooms,
-      discounts,
-      amenities,
-      branchAmenities,
-      roomAmenities,
-      settings,
-      dateAdjustments
-    ] = await Promise.all([
+  const request = (async () => {
+    const [branches, rooms, discounts, settings, dateAdjustments] = await Promise.all([
       fetchTable('branches'),
       fetchTable('room_types'),
-      fetchTable('stay_discounts', true),
-      fetchTable('amenities', true),
-      fetchTable('branch_amenities', true),
-      fetchTable('room_amenities', true),
-      fetchTable('settings', true),
-      fetchTable('date_adjustments', true)
+      fetchTable('stay_discounts'),
+      fetchTable('settings'),
+      fetchTable('date_adjustments'),
     ]);
-
-    let roomsData = rooms;
-    if (roomsData.length === 0) roomsData = await fetchTable('rooms');
-
-    cachedData = { branches, rooms: roomsData, discounts, amenities, branchAmenities, roomAmenities, settings, dateAdjustments };
-    return cachedData;
-  } catch (error) {
-    console.error('Unexpected error in fetchAllData:', error);
-    return { branches: [], rooms: [], discounts: [], amenities: [], branchAmenities: [], roomAmenities: [], settings: [], dateAdjustments: [] };
-  }
+    // A failed read must not be remembered, so the next call can try again.
+    if (branches.length === 0) pendingData = null;
+    return { ...emptyData(), branches, rooms, discounts, settings, dateAdjustments };
+  })();
+  pendingData = request;
+  return request;
 };
 
 export const fetchProperties = async (lang: Language = 'vi'): Promise<{

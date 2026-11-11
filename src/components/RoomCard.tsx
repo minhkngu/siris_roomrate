@@ -17,7 +17,12 @@ interface RoomCardProps {
 
 export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, priority }) => {
   const cloudinaryTag = branchTag && room.tag ? `${branchTag}_${room.tag}` : undefined;
-  const { images, loading } = useCloudinaryImages(cloudinaryTag, priority);
+  const cardRef = useRef<HTMLElement>(null);
+  // Cards far below the fold wait until they approach the viewport before asking for photos.
+  const [nearViewport, setNearViewport] = useState(!!priority || typeof IntersectionObserver === 'undefined');
+  const { images, loading } = useCloudinaryImages(nearViewport ? cloudinaryTag : undefined);
+  const [firstImageReady, setFirstImageReady] = useState(false);
+  const mountedSlides = useRef<Set<number>>(new Set());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSliding, setIsSliding] = useState(false);
   const [showNudge, setShowNudge] = useState(true);
@@ -39,7 +44,6 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
     }
     return { x, y };
   };
-  const preloadedRef = useRef<Set<number>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Touch state
@@ -49,25 +53,22 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
   const total = images.length;
   const hasMultiple = total > 1;
 
-  // Preload images: first, adjacent, then rest in background
   useEffect(() => {
-    if (total === 0) return;
-    const pl = (idx: number) => {
-      if (!preloadedRef.current.has(idx)) {
-        preloadedRef.current.add(idx);
-        const img = new Image();
-        img.src = images[idx].src;
-        img.srcset = images[idx].srcSet;
-      }
-    };
-    pl(0);
-    pl((currentIndex + 1) % total);
-    pl((currentIndex - 1 + total) % total);
-    if (total > 2 && preloadedRef.current.size < total) {
-      const timer = setTimeout(() => { for (let i = 0; i < total; i++) pl(i); }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [images, currentIndex, total]);
+    if (nearViewport || !cardRef.current) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) setNearViewport(true);
+    }, { rootMargin: '600px 0px' });
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, [nearViewport]);
+
+  // Only the current slide and its two neighbours are mounted, so the browser downloads
+  // each photo once, at the size the card really shows. Neighbours wait for the first photo.
+  mountedSlides.current.add(currentIndex);
+  if (firstImageReady && total > 1) {
+    mountedSlides.current.add((currentIndex + 1) % total);
+    mountedSlides.current.add((currentIndex - 1 + total) % total);
+  }
 
   // Auto-dismiss nudge
   useEffect(() => {
@@ -117,15 +118,11 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
     }
   }, [currentIndex, total, slideTo]);
 
-  // Keyboard
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!hasMultiple) return;
-      if (e.key === 'ArrowLeft') slideTo((currentIndex - 1 + total) % total, 'left');
-      else if (e.key === 'ArrowRight') slideTo((currentIndex + 1) % total, 'right');
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+  // Arrow keys move only the carousel that has focus.
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (!hasMultiple) return;
+    if (e.key === 'ArrowLeft') slideTo((currentIndex - 1 + total) % total, 'left');
+    else if (e.key === 'ArrowRight') slideTo((currentIndex + 1) % total, 'right');
   }, [currentIndex, total, hasMultiple, slideTo]);
 
   // Popup positioning + click outside
@@ -153,13 +150,14 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
   }, [showWarning]);
 
   return (
-    <article className="bg-white rounded-[1.75rem] overflow-hidden border border-slate-200/80 shadow-[0_12px_36px_-24px_rgba(15,23,42,0.45)] hover:-translate-y-1 hover:border-indigo-200 hover:shadow-[0_24px_48px_-24px_rgba(79,70,229,0.3)] transition-all duration-300 group h-full flex flex-col">
+    <article ref={cardRef} className="bg-white rounded-[1.75rem] overflow-hidden border border-slate-200/80 shadow-[0_12px_36px_-24px_rgba(15,23,42,0.45)] hover:-translate-y-1 hover:border-indigo-200 hover:shadow-[0_24px_48px_-24px_rgba(79,70,229,0.3)] transition-all duration-300 group h-full flex flex-col">
       <div
         ref={containerRef}
         className={`relative h-64 sm:h-72 overflow-hidden group/carousel bg-slate-100 shrink-0 select-none ${loading ? 'animate-shimmer bg-gray-200' : ''}`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onKeyDown={handleKeyDown}
       >
         {!loading && images.length > 0 ? (
           <div className="relative w-full h-full overflow-hidden">
@@ -170,17 +168,20 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
             >
               {images.map((imgData, idx) => (
                 <div key={idx} className="w-full h-full shrink-0 relative">
-                  <img
-                    src={imgData.src}
-                    srcSet={imgData.srcSet}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    alt={idx === currentIndex ? room.name : ''}
-                    className="w-full h-full object-cover"
-                    fetchPriority={idx === 0 ? 'high' : 'auto'}
-                    decoding="async"
-                    draggable={false}
-                    loading={idx === 0 ? 'eager' : 'lazy'}
-                  />
+                  {mountedSlides.current.has(idx) && (
+                    <img
+                      src={imgData.src}
+                      srcSet={imgData.srcSet}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      alt={idx === currentIndex ? room.name : ''}
+                      className="w-full h-full object-cover"
+                      fetchPriority={idx === 0 && priority ? 'high' : 'auto'}
+                      decoding="async"
+                      draggable={false}
+                      onLoad={idx === 0 ? () => setFirstImageReady(true) : undefined}
+                      onError={idx === 0 ? () => setFirstImageReady(true) : undefined}
+                    />
+                  )}
                 </div>
               ))}
             </div>

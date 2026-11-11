@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'demo';
 
@@ -7,34 +7,9 @@ export interface CloudinaryImage {
   srcSet: string;
 }
 
-export const useCloudinaryImages = (tag: string | undefined, priority: boolean = false) => {
+export const useCloudinaryImages = (tag: string | undefined) => {
   const [images, setImages] = useState<CloudinaryImage[]>([]);
   const [loading, setLoading] = useState(false);
-  const preloadLinkRef = useRef<HTMLLinkElement | null>(null);
-
-  // Inject/update a <link rel="preload"> in <head> for the first image
-  const setPreloadLink = (href: string, srcSet: string) => {
-    // Remove old preload link if exists
-    if (preloadLinkRef.current) {
-      preloadLinkRef.current.remove();
-    }
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'image';
-    link.href = href;
-    link.imageSrcset = srcSet;
-    document.head.appendChild(link);
-    preloadLinkRef.current = link;
-  };
-
-  useEffect(() => {
-    return () => {
-      // Cleanup on unmount
-      if (preloadLinkRef.current) {
-        preloadLinkRef.current.remove();
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (!tag) {
@@ -74,11 +49,6 @@ export const useCloudinaryImages = (tag: string | undefined, priority: boolean =
               ].join(', '),
             };
           });
-
-          // Inject preload link for the first image immediately ONLY if priority is true
-          if (priority && urls.length > 0) {
-            setPreloadLink(urls[0].src, urls[0].srcSet);
-          }
 
           setImages(urls);
         } else {

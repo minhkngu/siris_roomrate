@@ -9,13 +9,13 @@
 - **Điều hướng tức thì** — Chuyển đổi giữa Trang chủ và Chính sách chung bằng React State, không load lại trang.
 - **Thanh lọc cơ sở** — Sticky filter bar với underlined tabs, hỗ trợ cuộc ngang trên mobile.
 - **Bảng giá đa dạng** — Hiển thị giá ngày thường, cuối tuần, tháng ngắn/dài hạn.
-- **Carousel ảnh** — Điều hướng nhiều ảnh trên cả mobile & desktop, preload ảnh thông minh.
+- **Carousel ảnh** — Điều hướng nhiều ảnh trên cả mobile & desktop, chỉ tải ảnh đang xem và hai ảnh liền kề.
 - **Chính sách chung** — Trang riêng với loading skeleton, hiển thị dạng bài viết có số thứ tự.
 - **Phụ thu/thông báo** — Banner thông minh hiển thị surcharge theo tháng.
 - **Đa ngôn ngữ** — Hỗ trợ Tiếng Việt & Tiếng Anh, lưu lựa chọn vào localStorage.
 - **Responsive 100%** — Tối ưu cho mọi thiết bị.
 - **Cảnh báo phòng (Warning)** — Badge "CHÚ Ý" kế bên tên phòng, popup dùng React Portal.
-- **Tối ưu hiệu năng** — Cache dữ liệu Supabase, chunk splitting (React/Vendor/Supabase/Lucide riêng), CSS animation thay vì JS state, inline SVG giảm bundle size.
+- **Tối ưu hiệu năng** — Đọc Supabase bằng `fetch` (không dùng thư viện client), bắt đầu đọc dữ liệu ngay từ `index.html`, tách chunk React/Lucide, CSS animation thay vì JS state, inline SVG giảm bundle size.
 
 ---
 
@@ -30,7 +30,6 @@ src/
 ├── translations.ts               # Song ngữ vi/en
 ├── vite-env.d.ts                 # Vite env types
 ├── lib/
-│   └── supabase.ts               # Supabase client config
 ├── services/
 │   └── dataService.ts            # Fetch & transform dữ liệu (có cache)
 ├── hooks/
@@ -90,7 +89,7 @@ npm run lint
 
 - **Frontend:** React 19, Vite 6, TypeScript
 - **Styling:** Tailwind CSS 4
-- **Database:** Supabase
+- **Database:** Supabase (REST, gọi trực tiếp bằng `fetch`)
 - **Icons:** Lucide React
 - **Images:** Cloudinary
 
@@ -118,6 +117,11 @@ npm run lint
 18. **Gộp useEffect:** Hợp nhất 3 effect preload ảnh trong RoomCard thành 1 effect duy nhất; hợp nhất 2 effect popup warning thành 1.
 19. **Xóa React import dư:** App.tsx không còn import `React` (JSX tự động trong React 17+).
 20. **Thêm cancelled flag:** Tránh setState sau khi component unmount khi đổi ngôn ngữ.
+21. **Bỏ thư viện Supabase:** `dataService.ts` đọc 5 bảng (`branches`, `room_types`, `stay_discounts`, `settings`, `date_adjustments`) qua REST bằng `fetch`; không còn gọi 3 bảng không tồn tại (`amenities`, `branch_amenities`, `room_amenities`). Giảm khoảng 47 kB JS (gzip).
+22. **Đọc dữ liệu sớm:** Script nhỏ trong `index.html` gửi các truy vấn Supabase song song với việc tải bundle; `preconnect` lấy địa chỉ từ `VITE_SUPABASE_URL`.
+23. **Ảnh phòng tải một lần:** Bỏ preload bằng `new Image()` (khiến mỗi ảnh tải hai lần); carousel chỉ gắn ảnh hiện tại và hai ảnh liền kề. Thẻ phòng ở xa màn hình chỉ lấy danh sách ảnh khi sắp được cuộn tới.
+24. **Đổi ngôn ngữ giữ nguyên trang:** Không hiện lại skeleton, giữ cơ sở đang chọn và vị trí carousel.
+25. **Phím mũi tên:** Chỉ điều khiển carousel đang được focus thay vì mọi carousel cùng lúc.
 
 ---
 

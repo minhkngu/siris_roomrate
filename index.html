@@ -6,9 +6,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="preconnect" href="https://res.cloudinary.com" />
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
-  <link rel="preconnect" href="https://mtpefnlbqoxhjqcrgpui.supabase.co" />
-  <link rel="preconnect" href="https://mtpefnlbqoxhjqcrgpui.supabase.co" crossorigin />
+  <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin />
   <title>Siris Residences</title>
+  <script>
+    // Start the data requests now, in parallel with the JS bundle download.
+    (function () {
+      var url = '%VITE_SUPABASE_URL%', key = '%VITE_SUPABASE_ANON_KEY%';
+      if (url.indexOf('http') !== 0 || !window.fetch) return;
+      var headers = { apikey: key, Authorization: 'Bearer ' + key };
+      var tables = window.__sirisTables = {};
+      ['branches', 'room_types', 'stay_discounts', 'settings', 'date_adjustments'].forEach(function (table) {
+        tables[table] = fetch(url + '/rest/v1/' + table + '?select=*', { headers: headers })
+          .then(function (response) { return response.ok ? response.json() : Promise.reject(response.status); });
+        tables[table].catch(function () { });
+      });
+    })();
+  </script>
 </head>
 
 <body>
