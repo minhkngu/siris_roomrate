@@ -4,8 +4,6 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "test": "node --import tsx --test tests/*.test.mjs",
-    "data:short-term": "node scripts/sync-short-term.mjs",
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",

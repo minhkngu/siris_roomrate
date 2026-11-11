@@ -9,13 +9,13 @@
 - **Điều hướng tức thì** — Chuyển đổi giữa Trang chủ và Chính sách chung bằng React State, không load lại trang.
 - **Thanh lọc cơ sở** — Sticky filter bar với underlined tabs, hỗ trợ cuộc ngang trên mobile.
 - **Bảng giá đa dạng** — Hiển thị giá ngày thường, cuối tuần, tháng ngắn/dài hạn.
-- **Carousel ảnh** — Điều hướng nhiều ảnh trên cả mobile & desktop, preload ảnh thông minh.
+- **Carousel ảnh** — Điều hướng nhiều ảnh trên cả mobile & desktop, chỉ tải ảnh đang xem và hai ảnh liền kề.
 - **Chính sách chung** — Trang riêng với loading skeleton, hiển thị dạng bài viết có số thứ tự.
 - **Phụ thu/thông báo** — Banner thông minh hiển thị surcharge theo tháng.
 - **Đa ngôn ngữ** — Hỗ trợ Tiếng Việt & Tiếng Anh, lưu lựa chọn vào localStorage.
 - **Responsive 100%** — Tối ưu cho mọi thiết bị.
 - **Cảnh báo phòng (Warning)** — Badge "CHÚ Ý" kế bên tên phòng, popup dùng React Portal.
-- **Tối ưu hiệu năng** — Gộp các yêu cầu dữ liệu đồng thời, tách bundle React/Lucide, CSS animation và inline SVG giảm bundle size.
+- **Tối ưu hiệu năng** — Đọc Supabase bằng `fetch` (không dùng thư viện client), bắt đầu đọc dữ liệu ngay từ `index.html`, tách chunk React/Lucide, CSS animation thay vì JS state, inline SVG giảm bundle size.
 
 ---
 
@@ -29,8 +29,9 @@ src/
 ├── types.ts                      # TypeScript interfaces
 ├── translations.ts               # Song ngữ vi/en
 ├── vite-env.d.ts                 # Vite env types
+├── lib/
 ├── services/
-│   └── dataService.ts            # Fetch & transform dữ liệu trực tiếp từ Base
+│   └── dataService.ts            # Fetch & transform dữ liệu (có cache)
 ├── hooks/
 │   └── useCloudinaryImages.ts    # Lấy ảnh từ Cloudinary theo tag
 └── components/
@@ -62,7 +63,7 @@ npm install
 
 # Tạo file .env từ mẫu
 cp .env.example .env
-# Điền VITE_CLOUDINARY_CLOUD_NAME và LARK_APP_ID / LARK_APP_SECRET phía server
+# Sau đó điền các biến môi trường: SUPABASE_URL, SUPABASE_ANON_KEY, CLOUDINARY_CLOUD_NAME
 
 # Chạy dev server
 npm run dev       # http://localhost:3000
@@ -78,54 +79,17 @@ npm run lint
 
 | Biến | Mô tả | Bắt buộc |
 |------|-------|----------|
+| `VITE_SUPABASE_URL` | URL Supabase project | ✅ |
+| `VITE_SUPABASE_ANON_KEY` | Anon key Supabase | ✅ |
 | `VITE_CLOUDINARY_CLOUD_NAME` | Cloud name Cloudinary | ✅ (nếu dùng ảnh Cloudinary) |
 
 ---
-
-## Thử dữ liệu short-term từ Lark Base trên local
-
-Cấu hình `LARK_APP_ID` và `LARK_APP_SECRET` cho ứng dụng có quyền đọc **Siris Web**, rồi chạy:
-
-```bash
-npm run dev
-```
-
-Dev server gọi API Lark trực tiếp bằng `fetch`, không khởi chạy `lark-cli` khi tải trang.
-Chỉ phiên xác thực được giữ tới gần thời điểm hết hạn; các bảng luôn được đọc mới.
-Thông tin đăng nhập đặt phía server, không dùng tiền tố `VITE_`.
-Trên máy có sẵn cấu hình ứng dụng Siris, có thể đặt `LARK_CONFIG_DIRECTORY`
-trong `.env.local` để tái sử dụng cấu hình đó mà không sao chép khoá.
-Endpoint `/api/short-term` chỉ đọc các bảng `branches`, `room_types`, `settings`,
-`stay_discounts`, `date_adjustments`; không đọc các bảng `longterm_*`.
-Mỗi yêu cầu mới đọc trực tiếp Base, không dùng cache để bỏ qua lần đọc dữ liệu mới.
-Các bảng được đọc song song, hỗ trợ phân trang đầy đủ; giá trị ô (giá, tên,
-trạng thái ẩn/hiện...) luôn đọc mới ở mỗi yêu cầu.
-Trang tự đọc lại sau 10 giây kể từ lần đọc trước hoàn tất và khi quay lại tab.
-Thay đổi xuất hiện sau chu kỳ này cộng thời gian Lark phản hồi, không cần F5.
-Các yêu cầu đang chạy được gộp để tránh đọc trùng; giữ nguyên tab cơ sở đang chọn.
-Khi refresh, trang chờ phản hồi mới từ Base rồi mới hiển thị nội dung, không
-đọc dữ liệu cũ từ bộ nhớ trình duyệt. Chỉ tab cơ sở và ngôn ngữ được ghi nhớ.
-Nếu đọc lỗi, trang báo lỗi. Không có fallback sang Supabase hoặc nội dung
-kinh doanh mẫu khi cột Base trống. Thông tin đăng nhập không gửi tới trình duyệt.
-
-`npm run data:short-term` vẫn có thể xuất bản chụp để đối chiếu trong
-`.local/short-term.json` (không đưa vào Git), nhưng giao diện không đọc file này.
-Ảnh phòng vẫn dùng Cloudinary và bản đồ vẫn là tài nguyên của dự án.
-
-## Production trên Vercel
-
-`api/short-term.js` là backend production cho cùng endpoint `/api/short-term`.
-Thiết lập `LARK_APP_ID` và `LARK_APP_SECRET` dưới dạng Secret trong môi trường
-Production của dự án `siris-roomrate`. `LARK_BASE_TOKEN` có thể ghi đè Base mặc định.
-Ứng dụng Lark phải có quyền đọc Siris Web. Production không dùng cấu hình từ
-thư mục dự án khác, file dữ liệu local hoặc `lark-cli`.
-Function chạy tại Singapore, trả dữ liệu mới với `Cache-Control: no-store`.
 
 ## Công nghệ
 
 - **Frontend:** React 19, Vite 6, TypeScript
 - **Styling:** Tailwind CSS 4
-- **Nguồn dữ liệu:** Lark Base — Siris Web / short-term
+- **Database:** Supabase (REST, gọi trực tiếp bằng `fetch`)
 - **Icons:** Lucide React
 - **Images:** Cloudinary
 
@@ -141,18 +105,23 @@ Function chạy tại Singapore, trả dữ liệu mới với `Cache-Control: n
 6. **Footer responsive:** Layout riêng cho mobile (xếp dọc, căn giữa) và desktop (2 cột brand + contact), link "Chính sách chung" chỉ hiện trên mobile.
 7. **CSS nhất quán:** Dùng utility `scrollbar-hide` từ `index.css` thay vì inline style.
 8. **Gộp filter bar & facility card:** Thanh tab chọn cơ sở được gộp vào chung một card với thông tin cơ sở, loại bỏ sticky bar riêng lẻ. UI liền mạch hơn trên mọi kích thước màn hình.
-9. **Cảnh báo phòng (Warning):** Nếu cột `warning` trong bảng `room_types` có dữ liệu, hiển thị badge CHÚ Ý và popup. Hỗ trợ tiếng Anh qua cột `warning_en`.
-10. **Đổi ngôn ngữ không load lại:** Chỉ hiển thị loading skeleton ở lần đầu; các lần cập nhật sau thay nội dung trực tiếp.
+9. **Cảnh báo phòng (Warning):** Thêm field `warning` trong `RoomType`. Nếu phòng có dữ liệu ở cột `warning` (Supabase table `room_types`), badge **"⚠️ CHÚ Ý"** nhấp nháy sẽ xuất hiện kế bên tên phòng. Hover/click vào badge để xem popup nội dung cảnh báo (dùng React Portal, không bị clipping). Hỗ trợ đa ngôn ngữ qua cột `warning_en`.
+10. **Đổi ngôn ngữ không load lại:** Dùng `useRef` để chỉ hiển thị loading skeleton ở lần đầu tiên. Khi đổi ngôn ngữ, dữ liệu được lấy từ cache, không giật/lag.
 11. **Persist ngôn ngữ:** Lưu lựa chọn ngôn ngữ vào `localStorage`, khôi phục khi refresh trang.
 12. **Animation mượt khi refresh:** Loading skeleton cho cả trang chủ và trang chính sách, fade-in animation với `@keyframes fadeIn` CSS.
 13. **Fix footer hiển thị sai khi loading:** Footer có `loading` prop, khi đang tải dữ liệu sẽ hiển thị skeleton thay vì contact info mặc định.
 14. **Import trực tiếp GeneralPolicies:** Bỏ `React.lazy()` để tránh blank page khi refresh trang `?view=policies`.
-15. **Tách chunk (code splitting):** Cấu hình Vite `manualChunks` tách `react-vendor` và `lucide` thành các file riêng.
+15. **Tách chunk (code splitting):** Cấu hình Vite `manualChunks` tách `react-vendor`, `lucide`, `supabase` thành các file riêng — tận dụng cache trình duyệt, giảm dung lượng tải lại.
 16. **Inline SVG:** Thay thế icon `Waves` từ lucide-react bằng inline SVG để giảm kích thước bundle.
-17. **Tối ưu HTML:** Thêm `preconnect` + `crossorigin` cho Cloudinary trong `<head>`.
+17. **Tối ưu HTML:** Thêm `preconnect` + `crossorigin` cho Cloudinary và Supabase trong `<head>` để tăng tốc DNS và TLS handshake.
 18. **Gộp useEffect:** Hợp nhất 3 effect preload ảnh trong RoomCard thành 1 effect duy nhất; hợp nhất 2 effect popup warning thành 1.
 19. **Xóa React import dư:** App.tsx không còn import `React` (JSX tự động trong React 17+).
 20. **Thêm cancelled flag:** Tránh setState sau khi component unmount khi đổi ngôn ngữ.
+21. **Bỏ thư viện Supabase:** `dataService.ts` đọc 5 bảng (`branches`, `room_types`, `stay_discounts`, `settings`, `date_adjustments`) qua REST bằng `fetch`; không còn gọi 3 bảng không tồn tại (`amenities`, `branch_amenities`, `room_amenities`). Giảm khoảng 47 kB JS (gzip).
+22. **Đọc dữ liệu sớm:** Script nhỏ trong `index.html` gửi các truy vấn Supabase song song với việc tải bundle; `preconnect` lấy địa chỉ từ `VITE_SUPABASE_URL`.
+23. **Ảnh phòng tải một lần:** Bỏ preload bằng `new Image()` (khiến mỗi ảnh tải hai lần); carousel chỉ gắn ảnh hiện tại và hai ảnh liền kề. Thẻ phòng ở xa màn hình chỉ lấy danh sách ảnh khi sắp được cuộn tới.
+24. **Đổi ngôn ngữ giữ nguyên trang:** Không hiện lại skeleton, giữ cơ sở đang chọn và vị trí carousel.
+25. **Phím mũi tên:** Chỉ điều khiển carousel đang được focus thay vì mọi carousel cùng lúc.
 
 ---
 
