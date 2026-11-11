@@ -1,7 +1,9 @@
+import { supabase } from '../lib/supabase';
 import { Property, RoomType, Policy, DateAdjustment } from '../types';
 import { Language } from '../translations';
 
-interface BaseData {
+// Cache - only cache raw Supabase data, not transformed
+let cachedData: {
   branches: any[];
   rooms: any[];
   discounts: any[];
@@ -10,17 +12,7 @@ interface BaseData {
   roomAmenities: any[];
   settings: any[];
   dateAdjustments: any[];
-}
-let pendingData: Promise<BaseData> | null = null;
-
-interface PropertyData {
-  properties: Property[];
-  masterPropertyAmenities: string[];
-  masterRoomAmenities: string[];
-  generalPolicies: Policy[];
-  dateAdjustments: DateAdjustment[];
-  settings: any[];
-}
+} | null = null;
 
 const parseArray = (val: any): string[] => {
   if (Array.isArray(val)) return val;
@@ -47,21 +39,65 @@ const parseArray = (val: any): string[] => {
 };
 
 export const fetchAllData = async () => {
-  if (pendingData) return pendingData;
-  pendingData = (async () => {
-    const response = await fetch('/api/short-term', { cache: 'no-store' });
-    if (!response.ok) throw new Error('Cannot load short-term data from Lark Base');
-    const data = await response.json();
-    for (const key of ['branches', 'rooms', 'discounts', 'amenities', 'branchAmenities', 'roomAmenities', 'settings', 'dateAdjustments']) {
-      if (!Array.isArray(data[key])) throw new Error(`Invalid Lark Base response: ${key}`);
-    }
-    return data as BaseData;
-  })();
-  try { return await pendingData; }
-  finally { pendingData = null; }
+  if (cachedData) return cachedData;
+
+  if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+    console.error('Supabase credentials missing.');
+    return { branches: [], rooms: [], discounts: [], amenities: [], branchAmenities: [], roomAmenities: [], settings: [], dateAdjustments: [] };
+  }
+
+  try {
+    const fetchTable = async (table: string, isOptional = false) => {
+      const { data, error } = await supabase.from(table).select('*');
+      if (error) {
+        const isTableNotFound = error.message.includes('Could not find the table') || error.code === 'PGRST116';
+        if (!isOptional || !isTableNotFound) {
+          console.warn(`Error fetching table ${table}:`, error.message);
+        }
+        return [];
+      }
+      return data || [];
+    };
+
+    const [
+      branches,
+      rooms,
+      discounts,
+      amenities,
+      branchAmenities,
+      roomAmenities,
+      settings,
+      dateAdjustments
+    ] = await Promise.all([
+      fetchTable('branches'),
+      fetchTable('room_types'),
+      fetchTable('stay_discounts', true),
+      fetchTable('amenities', true),
+      fetchTable('branch_amenities', true),
+      fetchTable('room_amenities', true),
+      fetchTable('settings', true),
+      fetchTable('date_adjustments', true)
+    ]);
+
+    let roomsData = rooms;
+    if (roomsData.length === 0) roomsData = await fetchTable('rooms');
+
+    cachedData = { branches, rooms: roomsData, discounts, amenities, branchAmenities, roomAmenities, settings, dateAdjustments };
+    return cachedData;
+  } catch (error) {
+    console.error('Unexpected error in fetchAllData:', error);
+    return { branches: [], rooms: [], discounts: [], amenities: [], branchAmenities: [], roomAmenities: [], settings: [], dateAdjustments: [] };
+  }
 };
 
-export const fetchProperties = async (lang: Language = 'vi'): Promise<PropertyData> => {
+export const fetchProperties = async (lang: Language = 'vi'): Promise<{
+  properties: Property[],
+  masterPropertyAmenities: string[],
+  masterRoomAmenities: string[],
+  generalPolicies: Policy[],
+  dateAdjustments: DateAdjustment[],
+  settings: any[]
+}> => {
   const { branches, rooms, discounts, amenities, branchAmenities, roomAmenities, settings, dateAdjustments } = await fetchAllData();
 
   const getTranslatedValue = (item: any, field: string, currentLang: Language, defaultValue: any = '') => {
@@ -95,6 +131,20 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<PropertyDa
     } catch (e) {
       console.error('Error parsing policies:', e);
     }
+  }
+
+  if (generalPolicies.length === 0) {
+    generalPolicies = lang === 'en' ? [
+      { title: 'Time', content: 'Free access 24/7, no curfew.' },
+      { title: 'Security', content: 'Security camera system and modern fingerprint locks.' },
+      { title: 'Cleaning', content: 'Weekly cleaning service for common areas.' },
+      { title: 'Payment', content: 'Room payment from the 1st to the 5th of every month.' }
+    ] : [
+      { title: 'Giờ giấc', content: 'Giờ giấc tự do 24/7, không chung chủ.' },
+      { title: 'An ninh', content: 'Hệ thống camera an ninh và khóa vân tay hiện đại.' },
+      { title: 'Vệ sinh', content: 'Dịch vụ dọn dẹp khu vực chung hàng tuần.' },
+      { title: 'Thanh toán', content: 'Thanh toán tiền phòng từ ngày 1 đến ngày 5 hàng tháng.' }
+    ];
   }
 
   const masterPropertyAmenities = amenities
@@ -132,6 +182,10 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<PropertyDa
             .filter(Boolean) as string[];
         }
 
+        if (roomAmenitiesList.length === 0) {
+          roomAmenitiesList = lang === 'en' ? ['Air conditioning', 'Wifi', 'Fridge'] : ['Máy lạnh', 'Wifi', 'Tủ lạnh'];
+        }
+
         const branchStorageFolderRaw = branch.storage_folder || branch.storageFolder || branch.storagefolder;
         const roomStorageFolderPartRaw = room.storage_folder || room.storageFolder || room.storagefolder;
 
@@ -151,10 +205,13 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<PropertyDa
 
         return {
           id: String(room.id),
-          name: getTranslatedValue(room, 'name', lang),
+          name: getTranslatedValue(room, 'name', lang, lang === 'en' ? 'Room Type' : 'Loại phòng'),
           sqm: Number(room.sqm ?? room.area ?? 0),
           storageFolder: roomStorageFolder,
-          images: parseArray(room.images),
+          images: parseArray(room.images).length > 0 ? parseArray(room.images) : [
+            'https://picsum.photos/seed/room1/300/225',
+            'https://picsum.photos/seed/room2/300/225'
+          ],
           amenities: roomAmenitiesList,
           excludedAmenities: parseArray(getTranslatedValue(room, 'excluded_amenities', lang)),
           pricing: {
@@ -162,7 +219,7 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<PropertyDa
             weekend: Number(room.weekend_price ?? room.weekendPrice ?? room.weekendprice ?? 0),
             monthlyUnder3: Number(room.monthly_under_3 ?? room.monthlyUnder3 ?? room.monthlyunder3 ?? 0),
             monthlyOver3: Number(room.monthly_over_3 ?? room.monthlyOver3 ?? room.monthlyover3 ?? 0),
-            fees: getTranslatedValue(room, 'fees', lang)
+            fees: getTranslatedValue(room, 'fees', lang, lang === 'en' ? 'Electricity 4k, Water 100k/person' : 'Điện 4k, Nước 100k/ng')
           },
           tag: room.tag || '',
           isHidden: !!(room.is_hidden ?? room.isHidden ?? room.ishidden ?? false),
@@ -184,6 +241,10 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<PropertyDa
         .filter(Boolean) as string[];
     }
 
+    if (branchAmenitiesList.length === 0) {
+      branchAmenitiesList = lang === 'en' ? ['Wifi', '24/7 Security', 'Elevator'] : ['Wifi', 'Bảo vệ 24/7', 'Thang máy'];
+    }
+
     const bStorageFolderRaw = branch.storage_folder || branch.storageFolder || branch.storagefolder;
     const bStorageFolder = typeof bStorageFolderRaw === 'string' ? bStorageFolderRaw.trim() : undefined;
 
@@ -191,27 +252,28 @@ export const fetchProperties = async (lang: Language = 'vi'): Promise<PropertyDa
 
     return {
       id: String(branch.id),
-      name: getTranslatedValue(branch, 'name', lang),
-      address: getTranslatedValue(branch, 'address', lang),
-      description: getTranslatedValue(branch, 'description', lang),
+      name: getTranslatedValue(branch, 'name', lang, lang === 'en' ? 'Branch' : 'Cơ sở'),
+      address: getTranslatedValue(branch, 'address', lang, lang === 'en' ? 'Address updating' : 'Địa chỉ đang cập nhật'),
+      description: getTranslatedValue(branch, 'description', lang, lang === 'en' ? 'Modern living space, fully equipped.' : 'Không gian sống hiện đại, tiện nghi.'),
       storageFolder: bStorageFolder,
-      images: parseArray(branch.images),
+      images: parseArray(branch.images).length > 0 ? parseArray(branch.images) : ['https://picsum.photos/seed/branch/400/300'],
       amenities: branchAmenitiesList,
       excludedAmenities: parseArray(getTranslatedValue(branch, 'excluded_amenities', lang)),
-      policies: Array.isArray(branchPolicies) ? branchPolicies : [],
+      policies: Array.isArray(branchPolicies) ? branchPolicies : [
+        { title: lang === 'en' ? 'General Policy' : 'Chính sách chung', content: lang === 'en' ? 'Free access, no curfew.' : 'Giờ giấc tự do, không chung chủ.' }
+      ],
       promotion,
       tag: branch.tag || '',
       rooms: branchRooms
     };
   });
 
-  const result = {
+  return {
     properties,
-    masterPropertyAmenities,
-    masterRoomAmenities,
+    masterPropertyAmenities: masterPropertyAmenities.length > 0 ? masterPropertyAmenities : (lang === 'en' ? ['Wifi', 'Cleaning', 'Elevator'] : ['Wifi', 'Dọn phòng', 'Thang máy']),
+    masterRoomAmenities: masterRoomAmenities.length > 0 ? masterRoomAmenities : (lang === 'en' ? ['Air conditioning', 'Wifi', 'Balcony'] : ['Máy lạnh', 'Wifi', 'Ban công']),
     generalPolicies,
     dateAdjustments,
     settings
   };
-  return result;
 };

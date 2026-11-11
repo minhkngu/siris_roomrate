@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { MapPin, Search } from 'lucide-react';
 import { Property, Policy, DateAdjustment } from './types';
 import { fetchProperties } from './services/dataService';
@@ -21,13 +21,8 @@ export default function App() {
   const [dateAdjustments, setDateAdjustments] = useState<DateAdjustment[]>([]);
   const [settings, setSettings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-  const hasLoadedData = useRef(false);
 
-  const [activeFacility, setActiveFacility] = useState(() => {
-    try { return sessionStorage.getItem('siris_active_facility') || ''; }
-    catch { return ''; }
-  });
+  const [activeFacility, setActiveFacility] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentView, setCurrentView] = useState<'home' | 'policies'>(
     new URLSearchParams(window.location.search).get('view') === 'policies' ? 'policies' : 'home'
@@ -39,58 +34,27 @@ export default function App() {
   }, [lang]);
 
   useEffect(() => {
-    try {
-      if (activeFacility) sessionStorage.setItem('siris_active_facility', activeFacility);
-      else sessionStorage.removeItem('siris_active_facility');
-    } catch {
-      // Browsing remains available when session storage is disabled.
-    }
-  }, [activeFacility]);
-
-  useEffect(() => {
     let cancelled = false;
-    let timer: ReturnType<typeof setTimeout>;
-    let inFlight = false;
     const loadData = async () => {
-      if (cancelled || inFlight) return;
-      inFlight = true;
-      clearTimeout(timer);
-      if (!hasLoadedData.current) setLoading(true);
+      setLoading(true);
       try {
         const data = await fetchProperties(lang);
         if (cancelled) return;
-        hasLoadedData.current = true;
-        setLoadError(false);
         setProperties(data.properties);
         setGeneralPolicies(data.generalPolicies);
         setDateAdjustments(data.dateAdjustments);
         setSettings(data.settings || []);
-        setActiveFacility(current => current === 'all' || data.properties.some(property => property.id === current)
-          ? current : (data.properties[0]?.id ?? ''));
+        if (data.properties.length > 0) {
+          setActiveFacility(data.properties[0].id);
+        }
       } catch (error) {
         console.error('Failed to load properties:', error);
-        if (!cancelled) setLoadError(true);
       } finally {
-        inFlight = false;
         if (!cancelled) setLoading(false);
-        if (!cancelled && document.visibilityState === 'visible') {
-          timer = setTimeout(loadData, 10_000);
-        }
       }
     };
-    const refreshOnReturn = () => {
-      if (document.visibilityState === 'visible') void loadData();
-      else clearTimeout(timer);
-    };
-    window.addEventListener('focus', refreshOnReturn);
-    document.addEventListener('visibilitychange', refreshOnReturn);
     loadData();
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-      window.removeEventListener('focus', refreshOnReturn);
-      document.removeEventListener('visibilitychange', refreshOnReturn);
-    };
+    return () => { cancelled = true; };
   }, [lang]);
 
   useEffect(() => {
@@ -137,10 +101,10 @@ export default function App() {
       return typeof val === 'string' ? val : (val?.value || val || fallback);
     };
     return {
-      contactEmail: getVal(settings.find(s => s.key === 'email' || s.key === 'contact_email' || s.name === 'email')),
+      contactEmail: getVal(settings.find(s => s.key === 'email' || s.key === 'contact_email' || s.name === 'email'), 'siris.residences@gmail.com'),
       contactPhone: getVal(settings.find(s => s.key === 'phone' || s.key === 'contact_phone' || s.name === 'phone'), ''),
-      heroTitle: getVal(settings.find(s => s.key === 'hero_title' || s.name === 'hero_title')),
-      heroSubtitle: getVal(settings.find(s => s.key === 'hero_subtitle' || s.name === 'hero_subtitle'))
+      heroTitle: getVal(settings.find(s => s.key === 'hero_title' || s.name === 'hero_title'), t.heroTitle),
+      heroSubtitle: getVal(settings.find(s => s.key === 'hero_subtitle' || s.name === 'hero_subtitle'), t.heroSubtitle)
     };
   }, [settings, lang, t]);
 
@@ -224,15 +188,6 @@ export default function App() {
           </div>
         </div>
       </nav>
-
-      {loadError && (
-        <div role="alert" className="max-w-7xl mx-auto px-4 py-8 text-center text-slate-700">
-          <p>{lang === 'en' ? 'Unable to load data from Lark Base.' : 'Chưa tải được dữ liệu từ Lark Base.'}</p>
-          <button className="mt-3 text-indigo-600 font-semibold underline" onClick={() => window.location.reload()}>
-            {lang === 'en' ? 'Try again' : 'Thử lại'}
-          </button>
-        </div>
-      )}
 
       {!loading && properties.length > 0 && (
         <nav className="sticky top-16 z-40 bg-white/75 backdrop-blur-md border-b border-slate-200/80 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.08)] transition-all">
