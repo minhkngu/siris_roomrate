@@ -3,6 +3,7 @@ export type Language = 'vi' | 'en';
 export const translations = {
   vi: {
     selectLanguage: 'Chọn ngôn ngữ',
+    room: 'Phòng',
     generalPolicies: 'Chính sách chung',
     generalPoliciesSub: 'Áp dụng cho tất cả cơ sở Siris Residences',
     priceFrom: 'Giá từ',
@@ -36,6 +37,7 @@ export const translations = {
   },
   en: {
     selectLanguage: 'Select Language',
+    room: 'Room',
     generalPolicies: 'General Policies',
     generalPoliciesSub: 'Applied to all Siris Residences branches',
     priceFrom: 'Price from',

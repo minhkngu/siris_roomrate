@@ -6,6 +6,7 @@ import { translations, Language } from './translations';
 import { LanguageSelector } from './components/LanguageSelector';
 import { SurchargeBanner } from './components/SurchargeBanner';
 import { RoomCard } from './components/RoomCard';
+import { RoomCarousel } from './components/RoomCarousel';
 import { AmenityList } from './components/AmenityList';
 import { Footer } from './components/Footer';
 import { GeneralPolicies } from './components/GeneralPolicies';
@@ -275,18 +276,20 @@ export default function App() {
               />
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
-              {filteredRooms.map((room, idx) => (
-                <RoomCard
-                  key={`${room.property.id}-${room.id}`}
-                  room={room}
-                  t={t}
-                  lang={lang}
-                  branchTag={room.property.tag || room.property.name}
-                  priority={idx < 3}
-                />
-              ))}
-            </div>
+            {filteredRooms.length > 0 && (
+              <RoomCarousel resetKey={activeFacility} label={t.room}>
+                {filteredRooms.map((room, idx) => (
+                  <RoomCard
+                    key={`${room.property.id}-${room.id}`}
+                    room={room}
+                    t={t}
+                    lang={lang}
+                    branchTag={room.property.tag || room.property.name}
+                    priority={idx < 3}
+                  />
+                ))}
+              </RoomCarousel>
+            )}
 
             {filteredRooms.length === 0 && (
               <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200 mt-8">
