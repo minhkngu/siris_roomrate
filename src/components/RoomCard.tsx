@@ -153,7 +153,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, t, lang, branchTag, pr
     <article ref={cardRef} className="bg-white rounded-[1.75rem] overflow-hidden border border-slate-200/80 shadow-[0_12px_36px_-24px_rgba(15,23,42,0.45)] hover:-translate-y-1 hover:border-indigo-200 hover:shadow-[0_24px_48px_-24px_rgba(79,70,229,0.3)] transition-all duration-300 group h-full flex flex-col">
       <div
         ref={containerRef}
-        className={`relative h-64 sm:h-72 overflow-hidden group/carousel bg-slate-100 shrink-0 select-none ${loading ? 'animate-shimmer bg-gray-200' : ''}`}
+        className={`relative h-64 sm:h-72 overflow-hidden group/carousel bg-slate-100 shrink-0 select-none touch-pan-y ${loading ? 'animate-shimmer bg-gray-200' : ''}`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
