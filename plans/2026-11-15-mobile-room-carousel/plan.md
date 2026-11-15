@@ -8,7 +8,7 @@
 
 **Tech Stack:** React 19, TypeScript, Tailwind CSS v4, Vite. No test runner in the repo: verification is `npm run lint` (tsc), `npm run build`, and a Playwright script run against the dev server with mocked Supabase/Cloudinary.
 
-**Spec:** `docs/superpowers/specs/2026-11-15-mobile-room-carousel-design.md`
+**Spec:** `plans/2026-11-15-mobile-room-carousel/design.md`
 
 ## Global Constraints
 
